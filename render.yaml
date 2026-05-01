@@ -2,7 +2,7 @@ services:
   # Backend Service
   - type: web
     name: calyx-ai-backend
-    runtime: python
+    env: python
     region: singapore
     plan: free
     rootDir: Backend
