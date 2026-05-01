@@ -19,5 +19,15 @@ services:
         value: ""
       - key: GroqAPIKey
         value: ""
+      - key: CohereAPIKey
+        value: ""
       - key: JWT_SECRET
         value: "generate_a_random_string_here"
+      - key: GOOGLE_CLIENT_ID
+        value: ""
+      - key: GOOGLE_CLIENT_SECRET
+        value: ""
+      - key: GITHUB_CLIENT_ID
+        value: ""
+      - key: GITHUB_CLIENT_SECRET
+        value: ""
