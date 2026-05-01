@@ -1,0 +1,28 @@
+{
+  "id": "16103766-e09b-45cf-ad70-3464c136b564",
+  "title": "hi",
+  "createdAt": "2026-04-29T12:08:48.590338",
+  "updatedAt": "2026-04-29T12:10:11.564357",
+  "messages": [
+    {
+      "role": "user",
+      "content": "hi",
+      "time": "2026-04-29T12:08:50.375816"
+    },
+    {
+      "role": "assistant",
+      "content": "Hi! How's your day going so far? Is there something I can help you with or would you like to chat?",
+      "time": "2026-04-29T12:08:50.375834"
+    },
+    {
+      "role": "user",
+      "content": "give me a one joke on AI",
+      "time": "2026-04-29T12:10:11.564340"
+    },
+    {
+      "role": "assistant",
+      "content": "Here's one:\nWhy did the AI program go to therapy?\nBecause it was struggling to process its emotions!",
+      "time": "2026-04-29T12:10:11.564353"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+cohere
+groq
+pillow
+google-generativeai
+googlesearch-python
+pygame
+requests
+pyttsx3
+edge-tts
+python-dotenv
+flask
+flask-cors
+flask-limiter
+PyJWT
+bcrypt
+rich
+gunicorn

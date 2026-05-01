@@ -1,0 +1,32 @@
+services:
+  # Backend Service
+  - type: web
+    name: calyx-ai-backend
+    env: python
+    region: singapore
+    plan: free
+    rootDir: Backend
+    buildCommand: pip install -r Requirements.txt
+    startCommand: gunicorn server:app --workers 1 --timeout 120 --bind 0.0.0.0:$PORT
+    envVars:
+      - key: FRONTEND_URL
+        value: https://your-calyx-frontend.onrender.com
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+
+  # Frontend Static Site
+  - type: static
+    name: calyx-ai-frontend
+    env: static
+    rootDir: Frontend
+    buildCommand: npm install && npm run build
+    publishDir: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://calyx-ai-backend.onrender.com/api

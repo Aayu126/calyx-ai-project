@@ -1,0 +1,144 @@
+@import "@fontsource/geist-sans";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 260 87% 3%;
+    --foreground: 40 6% 95%;
+    --hero-sub: 40 6% 82%;
+  }
+
+  body {
+    font-family: 'Geist Sans', sans-serif;
+    @apply bg-background text-foreground transition-colors duration-300;
+  }
+}
+
+@layer components {
+  .liquid-glass { 
+    background: rgba(255, 255, 255, 0.01); 
+    background-blend-mode: luminosity; 
+    backdrop-filter: blur(4px); 
+    border: none; 
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1); 
+    position: relative; 
+    overflow: hidden; 
+  }
+
+  .liquid-glass::before { 
+    content: ""; 
+    position: absolute; 
+    inset: 0; 
+    border-radius: inherit; 
+    padding: 1.4px; 
+    background: linear-gradient(180deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.15) 20%, rgba(255,255,255,0) 40%, rgba(255,255,255,0) 60%, rgba(255,255,255,0.15) 80%, rgba(255,255,255,0.45) 100%); 
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); 
+    -webkit-mask-composite: xor; 
+    mask-composite: exclude; 
+    pointer-events: none; 
+  }
+
+  .btn-hero-secondary {
+    @apply liquid-glass px-6 py-2 rounded-full font-medium text-foreground/90 hover:text-foreground transition-all duration-300 active:scale-95;
+  }
+
+  .orb-gradient {
+    background: radial-gradient(circle at center, #99f6e4 0%, #137fec 40%, #ffffff 100%);
+    filter: blur(60px);
+    opacity: 0.6;
+  }
+
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .glass-panel-dark {
+    background: rgba(16, 25, 34, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .text-glow {
+    text-shadow: 0 0 20px rgba(19, 127, 236, 0.2);
+  }
+
+  .syntax-comment { color: #94a3b8; }
+  .syntax-keyword { color: #137fec; }
+  .syntax-string { color: #10b981; }
+
+  /* Chat scrollbar */
+  .chat-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+  .chat-scroll::-webkit-scrollbar-thumb {
+    background: rgba(19, 127, 236, 0.2);
+    border-radius: 9999px;
+  }
+  .chat-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* Waveform animation */
+  @keyframes waveform {
+    0%, 100% { height: 16px; }
+    50% { height: 32px; }
+  }
+  .wave-bar {
+    animation: waveform 0.8s ease-in-out infinite;
+  }
+  .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+  .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+  .wave-bar:nth-child(4) { animation-delay: 0.3s; }
+  .wave-bar:nth-child(5) { animation-delay: 0.4s; }
+  .wave-bar:nth-child(6) { animation-delay: 0.15s; }
+  .wave-bar:nth-child(7) { animation-delay: 0.25s; }
+  .wave-bar:nth-child(8) { animation-delay: 0.35s; }
+
+  /* Pulse ring for mic */
+  @keyframes pulse-ring {
+    0% { transform: scale(0.8); opacity: 0.5; }
+    50% { transform: scale(1.2); opacity: 0; }
+    100% { transform: scale(0.8); opacity: 0; }
+  }
+  .pulse-ring {
+    animation: pulse-ring 1.5s ease-in-out infinite;
+  }
+
+  /* Typing dots */
+  @keyframes bounce-dot {
+    0%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-8px); }
+  }
+  .typing-dot {
+    animation: bounce-dot 1.2s ease-in-out infinite;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.15s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+
+  /* Fade in up animation */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-in-up {
+    animation: fadeInUp 0.6s ease-out forwards;
+  }
+
+  /* Shimmer */
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  .shimmer {
+    background: linear-gradient(90deg, transparent, rgba(19,127,236,0.08), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "id": "216f0870-2403-4398-9cd8-add0d1ac5aa2",
+  "title": "Tell me a joke about robots.",
+  "createdAt": "2026-04-29T12:07:49.200903",
+  "updatedAt": "2026-04-29T12:07:51.568394",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Tell me a joke about robots.",
+      "time": "2026-04-29T12:07:51.568366"
+    },
+    {
+      "role": "assistant",
+      "content": "Here's one:\nWhy did the robot go on a diet?\nBecause it wanted to lose some bytes!\nI hope that one charged you up with laughter! Do you want to hear another one?",
+      "time": "2026-04-29T12:07:51.568389"
+    }
+  ]
+}

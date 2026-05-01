@@ -1,0 +1,52 @@
+[
+  {
+    "id": "b3500953-8f0d-4968-bd25-5a94222065b4",
+    "name": "Test User",
+    "email": "test@calyx.ai",
+    "password": "$2b$12$m6Y.Oqi6WJRWGqRBv6q7XOWC5AD5YMIDRQXiDdR8MYzurFS0cythG",
+    "provider": "local",
+    "created_at": "2026-02-18T12:29:39.618074"
+  },
+  {
+    "id": "66ca5bb1-adee-45dc-820b-465bd24ae335",
+    "name": "Test User",
+    "email": "ayutestuser123@example.comcom",
+    "password": "$2b$12$h1mXBMjh2FMx3X8scvkK.eko.VxRBc4gY0ppy/1RVgkygKazEbo/q",
+    "provider": "local",
+    "created_at": "2026-04-29T12:07:31.851810"
+  },
+  {
+    "id": "4b367b96-0ae6-47b9-aa26-745587eb948d",
+    "name": "Test User",
+    "email": "testuser@gmail.com",
+    "password": "",
+    "provider": "google",
+    "picture": "http://example.com/pic.jpg",
+    "created_at": "2026-04-29T14:47:36.829208"
+  },
+  {
+    "id": "93c67c4e-03d0-46fe-b136-0e7a4d7acb98",
+    "name": "AYUSH CHAVAN",
+    "email": "ayushchavan1980@gmail.com",
+    "password": "",
+    "provider": "google",
+    "picture": "https://lh3.googleusercontent.com/a/ACg8ocKIErW81ipRoRG1v_ONlowrjCbYznHdXDiuBZLHOpXSxCpZbJJM=s96-c",
+    "created_at": "2026-04-29T14:48:38.568438"
+  },
+  {
+    "id": "bbeccb45-86e4-460e-a730-75d16cbe8328",
+    "name": "Test User",
+    "email": "test@example.com",
+    "password": "$2b$12$MizKvQbaLqzqfBFTM4...eXvvEs8Lby2y8dQBBxE6iDKY6uT4HtFC",
+    "provider": "local",
+    "created_at": "2026-05-01T22:56:22.395032"
+  },
+  {
+    "id": "53914918-7657-4f94-8efd-f3f5edee69bd",
+    "name": "Test User",
+    "email": "test_auth_123@example.com",
+    "password": "$2b$12$WxLQYp5ZhL8YFUzyzA11heQwX0OLl0vBAcn2mhQ4hyDsBcGJBMRFe",
+    "provider": "local",
+    "created_at": "2026-05-02T00:40:28.292061"
+  }
+]
