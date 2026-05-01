@@ -10,7 +10,7 @@ services:
     startCommand: gunicorn server:app --workers 1 --timeout 120 --bind 0.0.0.0:$PORT
     envVars:
       - key: FRONTEND_URL
-        value: https://calyx-ai-frontend.onrender.com
+        value: https://calyx-ai-project.vercel.app
       - key: GEMINI_API_KEY
         value: ""
       - key: HuggingFaceAPIKey
@@ -19,14 +19,3 @@ services:
         value: ""
       - key: JWT_SECRET
         value: "generate_a_random_string_here"
-
-  # Frontend Static Site
-  - type: web
-    name: calyx-ai-frontend
-    env: static
-    rootDir: Frontend
-    buildCommand: npm install && npm run build
-    staticPublishDir: dist
-    envVars:
-      - key: VITE_API_URL
-        value: https://calyx-ai-backend.onrender.com/api
