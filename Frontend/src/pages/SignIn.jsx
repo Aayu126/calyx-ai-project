@@ -23,14 +23,13 @@ export default function SignIn() {
     }
 
     const handleGoogleLogin = () => {
-        // Pass the current frontend origin so the backend redirects back to the correct port
         const origin = window.location.origin
-        window.location.href = `http://localhost:5000/api/auth/google?frontend_origin=${encodeURIComponent(origin)}`
+        window.location.href = getGoogleAuthUrl(origin)
     }
 
     const handleGitHubLogin = () => {
         const origin = window.location.origin
-        window.location.href = `http://localhost:5000/api/auth/github?frontend_origin=${encodeURIComponent(origin)}`
+        window.location.href = getGitHubAuthUrl(origin)
     }
 
     return (

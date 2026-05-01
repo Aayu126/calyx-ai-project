@@ -140,10 +140,12 @@ export async function signUp(data) {
 }
 
 // ─── OAuth URLs ──────────────────────────────────────
-export function getGoogleAuthUrl() {
-    return `${API_URL}/auth/google`
+export function getGoogleAuthUrl(frontendOrigin) {
+    const baseUrl = `${API_URL}/auth/google`
+    return frontendOrigin ? `${baseUrl}?frontend_origin=${encodeURIComponent(frontendOrigin)}` : baseUrl
 }
 
-export function getGitHubAuthUrl() {
-    return `${API_URL}/auth/github`
+export function getGitHubAuthUrl(frontendOrigin) {
+    const baseUrl = `${API_URL}/auth/github`
+    return frontendOrigin ? `${baseUrl}?frontend_origin=${encodeURIComponent(frontendOrigin)}` : baseUrl
 }
