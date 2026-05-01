@@ -21,11 +21,12 @@ services:
         value: "generate_a_random_string_here"
 
   # Frontend Static Site
-  - type: static
+  - type: web
     name: calyx-ai-frontend
+    env: static
     rootDir: Frontend
     buildCommand: npm install && npm run build
-    publishDir: dist
+    staticPublishDir: dist
     envVars:
       - key: VITE_API_URL
         value: https://calyx-ai-backend.onrender.com/api
