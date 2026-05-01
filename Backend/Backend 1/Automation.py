@@ -13,20 +13,27 @@ import keyboard # Import keyboard for keyboard-related actions.
 import asyncio # Import asyncio for asynchronous programming.
 import os # Import os for operating system functionalities.
 
-#Load environment variables from the env file.
-env_vars = dotenv_values(".env")
-GroqAPIKey = env_vars.get("GroqAPIKey") # Retrieve the Groq API key.
+# Load environment variables (production-safe)
+GroqAPIKey = os.environ.get("GroqAPIKey")
 
-#Define CSS classes for parsing specific elements in HTML content.
+# Initialize the Groq client safely
+client = None
+if GroqAPIKey:
+    try:
+        client = Groq(api_key=GroqAPIKey)
+    except Exception as e:
+        print(f"[ERROR] Groq initialization failed in Automation: {e}")
+else:
+    print("[WARNING] GroqAPIKey is missing in Automation.")
+
+
+# Define CSS classes for parsing specific elements in HTML content.
 classes = ["zCubwf", "hgKElc", "LTKOO SY7ric", "ZOLcW", "gsrt vk_bk FzvWSb YwPhnf", "pclqee", "tw-Data-text tw-text-small tw-ta",
 "IZ6rdc", "05uR6d LTKOO", "vlzY6d", "webanswers-webanswers_table_webanswers-table", "dDoNo ikb4Bb gsrt", "sXLa0e",
 "LWkfKe", "VQF4g", "qv3Wpe", "kno-rdesc", "SPZz6b"]
 
-#Define a user-agent for making web requests.
+# Define a user-agent for making web requests.
 useragent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.75 Safari/537.36'
-
-#Initialize the Groq client with the API key.
-client = Groq(api_key=GroqAPIKey)
 
 #Predefined professional responses for user interactions.
 professional_responses = [

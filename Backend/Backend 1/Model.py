@@ -5,14 +5,20 @@ import os
 
 # Get absolute path to project root (Elon - Copy directory)
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_ENV_PATH = os.path.join(_BASE_DIR, ".env")
 
-# Load environment variables from the .env file.
-env_vars = dotenv_values(_ENV_PATH)
+# Use os.environ instead of .env file for production
+CohereAPIKey = os.environ.get("CohereAPIKey")
 
-CohereAPIKey = env_vars.get("CohereAPIKey")
+# Initialize the Cohere client safely
+co = None
+if CohereAPIKey:
+    try:
+        co = cohere.Client(api_key=CohereAPIKey)
+    except Exception as e:
+        print(f"[ERROR] Cohere initialization failed: {e}")
+else:
+    print("[WARNING] CohereAPIKey is missing. Decision Model will not function.")
 
-co = cohere.Client(api_key=CohereAPIKey)
 
 # Define a list of recognized function keywords for task categorization.
 funcs = [

@@ -7,19 +7,24 @@ import os
 
 # Get absolute path to project root (Elon - Copy directory)
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_ENV_PATH = os.path.join(_BASE_DIR, ".env")
 _DATA_DIR = os.path.join(_BASE_DIR, "Data 1")
 _CHATLOG_PATH = os.path.join(_DATA_DIR, "ChatLog.json")
 
-# Load environment variables from the .env file.
-env_vars = dotenv_values(_ENV_PATH)
+# Use os.environ instead of .env file for production
+Username = os.environ.get("Username", "User")
+Assistantname = os.environ.get("Assistantname", "CALYX")
+GroqAPIKey = os.environ.get("GroqAPIKey")
 
-Username = env_vars.get("Username", "User")
-Assistantname = env_vars.get("Assistantname", "CALYX")
-GroqAPIKey = env_vars.get("GroqAPIKey")
+# Initialize the Groq client safely
+client = None
+if GroqAPIKey:
+    try:
+        client = Groq(api_key=GroqAPIKey)
+    except Exception as e:
+        print(f"[ERROR] Groq initialization failed in SearchEngine: {e}")
+else:
+    print("[WARNING] GroqAPIKey is missing. Realtime Search will not function.")
 
-# Initialize the Groq client with the env API key.
-client = Groq(api_key=GroqAPIKey)
 
 
 System = f"""Hello, I am {Username}, You are a very accurate and advanced AI chatbot named {Assistantname} which has real-time up-to-date information from the internet.

@@ -40,37 +40,39 @@ import bcrypt
 try:
     from Chatbot import ChatBot
     print("[SUCCESS] Chatbot module loaded")
-except ImportError as e:
-    print(f"[ERROR] Chatbot module failed: {e}")
+except Exception as e:
+    print(f"[CRITICAL] Chatbot module failed to load: {e}")
     ChatBot = None
 
 try:
     from Model import FirstLayerDMM
     print("[SUCCESS] Model (Decision) module loaded")
-except ImportError as e:
-    print(f"[ERROR] Model module failed: {e}")
+except Exception as e:
+    print(f"[CRITICAL] Model module failed to load: {e}")
     FirstLayerDMM = None
 
 try:
     from RealtimeSearchEngine import RealtimeSearchEngine
     print("[SUCCESS] RealtimeSearchEngine module loaded")
-except ImportError as e:
-    print(f"[ERROR] RealtimeSearchEngine module failed: {e}")
+except Exception as e:
+    print(f"[CRITICAL] RealtimeSearchEngine module failed to load: {e}")
     RealtimeSearchEngine = None
+
 
 try:
     from ImageGeneration import generate_images_base64
     print("[SUCCESS] ImageGeneration module loaded")
-except ImportError as e:
-    print(f"[ERROR] ImageGeneration module failed: {e}")
+except Exception as e:
+    print(f"[ERROR] ImageGeneration module failed to load: {e}")
     generate_images_base64 = None
 
 try:
     from TextToSpeech import generate_audio_bytes
     print("[SUCCESS] TextToSpeech module loaded")
-except ImportError as e:
-    print(f"[ERROR] TextToSpeech module failed: {e}")
+except Exception as e:
+    print(f"[ERROR] TextToSpeech module failed to load: {e}")
     generate_audio_bytes = None
+
 
 
 # ── Flask App Setup ───────────────────────────────────────────
