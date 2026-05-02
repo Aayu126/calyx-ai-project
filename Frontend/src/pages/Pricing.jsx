@@ -85,23 +85,23 @@ export default function Pricing() {
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
-                    className="text-center mb-20"
+                    className="text-center mb-16 md:mb-24"
                 >
                     <motion.div 
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black tracking-[0.3em] uppercase mb-8"
+                        className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-[9px] md:text-[10px] font-black tracking-[0.4em] uppercase mb-10 shadow-lg shadow-primary/5"
                     >
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                        Pricing Plans
+                        <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                        Infrastructure Tiering
                     </motion.div>
-                    <h1 className="text-5xl md:text-8xl font-general font-bold tracking-tight mb-8 text-foreground leading-[1.1]">
-                        The power of AI, <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-400 to-purple-500 animate-gradient-x">priced for you</span>
+                    <h1 className="text-5xl md:text-8xl font-general font-bold tracking-tight mb-8 text-foreground leading-[1.05]">
+                        The power of AI, <br className="hidden md:block" />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-400 to-emerald-400 animate-gradient-x drop-shadow-[0_0_15px_rgba(59,130,246,0.3)]">priced for scale</span>
                     </h1>
-                    <p className="text-xl text-hero-sub max-w-2xl mx-auto mb-12 font-geist leading-relaxed">
-                        Join thousands of creators and engineers building the future with CALYX.
-                        Simple, transparent pricing for every scale.
+                    <p className="text-lg md:text-xl text-hero-sub max-w-3xl mx-auto mb-14 font-geist leading-relaxed opacity-80">
+                        Harness the next generation of machine intelligence. Simple, transparent pricing 
+                        designed to evolve with your creative and technical ambitions.
                     </p>
 
                     {/* Monthly / Yearly Toggle */}
@@ -140,67 +140,64 @@ export default function Pricing() {
 
                 {/* Plan Cards */}
                 <div className="grid lg:grid-cols-3 gap-8 mb-32">
-                    {PLANS.map((plan, index) => (
-                        <motion.div
+                    {PLANS.map((plan, index)                         <motion.div
                             key={plan.name}
-                            initial={{ opacity: 0, y: 50 }}
+                            initial={{ opacity: 0, y: 40 }}
                             whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.7, delay: index * 0.1, ease: "easeOut" }}
-                            whileHover={{ y: -10, scale: 1.02 }}
-                            className={`relative liquid-glass rounded-[40px] p-10 flex flex-col transition-all duration-500 group ${
+                            viewport={{ once: true, margin: "-100px" }}
+                            transition={{ duration: 0.8, delay: index * 0.15, ease: [0.21, 0.47, 0.32, 0.98] }}
+                            whileHover={{ y: -12, scale: 1.015 }}
+                            className={`relative liquid-glass rounded-[48px] p-8 md:p-12 flex flex-col transition-all duration-700 group ${
                                 plan.highlight 
-                                ? 'border-primary/40 shadow-[0_30px_100px_-20px_rgba(59,130,246,0.2)] z-10' 
-                                : 'hover:border-white/20'
+                                ? 'border-primary/40 bg-white/[0.03] shadow-[0_40px_120px_-20px_rgba(59,130,246,0.25)] z-10' 
+                                : 'border-white/5 hover:border-white/10 shadow-2xl'
                             }`}
                         >
                             {plan.highlight && (
-                                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-primary to-blue-600 text-white text-[9px] font-black px-6 py-2 rounded-full shadow-2xl border border-white/20 uppercase tracking-[0.2em] animate-bounce-subtle">
+                                <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-primary via-blue-600 to-primary bg-[length:200%_auto] text-white text-[9px] font-black px-7 py-2.5 rounded-full shadow-2xl border border-white/20 uppercase tracking-[0.25em] animate-gradient-x">
                                     Recommended
                                 </div>
                             )}
 
-                            <div className="mb-10">
-                                <h3 className="text-3xl font-general font-bold mb-3 text-foreground group-hover:text-primary transition-colors">{plan.name}</h3>
-                                <p className="text-sm text-hero-sub font-geist leading-relaxed">{plan.description}</p>
+                            <div className="mb-12">
+                                <h3 className="text-3xl md:text-4xl font-general font-bold mb-4 text-foreground group-hover:text-primary transition-colors duration-500 tracking-tight">{plan.name}</h3>
+                                <p className="text-sm md:text-base text-hero-sub font-geist leading-relaxed opacity-70 group-hover:opacity-100 transition-opacity duration-500">{plan.description}</p>
                             </div>
 
-                            <div className="flex items-baseline gap-2 mb-10">
-                                <span className="text-6xl font-general font-bold text-foreground tracking-tighter">
+                            <div className="flex items-baseline gap-2 mb-12">
+                                <span className="text-6xl md:text-7xl font-general font-bold text-foreground tracking-tighter transition-transform duration-500 group-hover:scale-105 origin-left">
                                     ${yearly ? plan.price.yearly : plan.price.monthly}
                                 </span>
-                                <span className="text-hero-sub text-sm font-black uppercase tracking-widest">/mo</span>
+                                <span className="text-hero-sub text-xs md:text-sm font-black uppercase tracking-[0.2em] opacity-40">/ month</span>
                             </div>
 
                             <Link
                                 to="/signup"
-                                className={`group/btn relative overflow-hidden block w-full text-center font-black py-5 rounded-2xl transition-all duration-500 font-general uppercase tracking-[0.2em] text-[10px] ${
+                                className={`group/btn relative overflow-hidden block w-full text-center font-black py-5 md:py-6 rounded-2xl md:rounded-3xl transition-all duration-500 font-general uppercase tracking-[0.25em] text-[9px] md:text-[10px] ${
                                     plan.highlight 
-                                    ? 'bg-primary text-white shadow-xl shadow-primary/20 hover:shadow-primary/40' 
-                                    : 'bg-white/5 border border-white/10 text-white hover:bg-white/10'
+                                    ? 'bg-primary text-white shadow-xl shadow-primary/30 hover:shadow-primary/50' 
+                                    : 'bg-white/[0.03] border border-white/5 text-white hover:bg-white/10 hover:border-white/20'
                                 }`}
                             >
                                 <span className="relative z-10">{plan.cta}</span>
-                                {plan.highlight && (
-                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000" />
-                                )}
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000 ease-in-out" />
                             </Link>
 
-                            <div className="my-10 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                            <div className="my-12 h-px bg-gradient-to-r from-transparent via-white/5 to-transparent" />
 
-                            <ul className="space-y-5 flex-grow">
+                            <ul className="space-y-6 flex-grow">
                                 {plan.features.map((feature, i) => (
                                     <li key={i} className="flex items-center gap-4 group/item">
-                                        <div className="w-6 h-6 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0 group-hover/item:bg-primary/20 group-hover/item:scale-110 transition-all duration-300">
-                                            <svg className="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <div className="w-7 h-7 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0 group-hover/item:bg-primary/30 group-hover/item:scale-110 group-hover/item:rotate-12 transition-all duration-500">
+                                            <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
                                             </svg>
                                         </div>
-                                        <span className="text-hero-sub group-hover/item:text-foreground transition-colors font-geist text-sm leading-tight">{feature}</span>
+                                        <span className="text-hero-sub group-hover/item:text-foreground transition-all duration-500 font-geist text-sm md:text-[15px] leading-tight opacity-80 group-hover:opacity-100">{feature}</span>
                                     </li>
                                 ))}
                             </ul>
-                        </motion.div>
+                        </motion.div>n.div>
                     ))}
                 </div>
 

@@ -193,7 +193,7 @@ export default function Chat() {
                 <span key={i}>
                     {boldParts.map((bp, j) => {
                         if (bp.startsWith('**') && bp.endsWith('**')) {
-                            return <strong key={j} className="font-semibold text-primary">{bp.slice(2, -2)}</strong>
+                            return <strong key={j} className="font-bold text-primary drop-shadow-[0_0_8px_rgba(var(--primary-rgb),0.3)]">{bp.slice(2, -2)}</strong>
                         }
                         return <span key={j} className="whitespace-pre-wrap">{bp}</span>
                     })}
@@ -339,9 +339,9 @@ export default function Chat() {
                             <span className="material-icons text-hero-sub text-lg md:text-xl">{sidebarOpen ? 'menu_open' : 'menu'}</span>
                         </button>
                         <div className="flex flex-col min-w-0">
-                            <span className="text-[7px] md:text-[9px] font-general font-bold uppercase tracking-[0.2em] text-primary mb-0.5 truncate opacity-80">System Action</span>
-                            <h2 className="text-[11px] md:text-sm font-general font-bold text-foreground truncate max-w-[120px] xs:max-w-[200px] md:max-w-none">
-                                {activeConvId ? conversations.find(c => c.id === activeConvId)?.title || 'Standard Chat' : 'Initialize Interface'}
+                            <span className="text-[8px] md:text-[10px] font-general font-bold uppercase tracking-[0.2em] text-primary mb-0.5 truncate opacity-90">Session Status</span>
+                            <h2 className="text-[12px] md:text-sm font-general font-bold text-foreground truncate max-w-[140px] xs:max-w-[220px] md:max-w-none">
+                                {activeConvId ? conversations.find(c => c.id === activeConvId)?.title || 'Standard Interface' : 'Initialize CALYX'}
                             </h2>
                         </div>
                     </div>
@@ -451,44 +451,58 @@ export default function Chat() {
                         )}
 
                         {/* Message Loop */}
-                        <AnimatePresence mode="popLayout">
+                        <AnimatePresence mode="popLayout" initial={false}>
                         {messages.map((msg, i) => (
                             <motion.div 
-                                key={i} 
-                                initial={{ opacity: 0, x: msg.role === 'user' ? 10 : -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ duration: 0.5, ease: "easeOut" }}
-                                className={`flex gap-2 md:gap-6 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+                                key={activeConvId ? `${activeConvId}-${i}` : i} 
+                                layout
+                                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ 
+                                    duration: 0.4, 
+                                    ease: [0.23, 1, 0.32, 1],
+                                    layout: { type: "spring", stiffness: 300, damping: 30 }
+                                }}
+                                className={`flex gap-3 md:gap-6 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
                             >
                                 {/* Avatar */}
-                                <div className="flex-shrink-0 pt-0.5">
+                                <div className="flex-shrink-0 pt-1">
                                     {msg.role === 'assistant' ? (
-                                        <div className="w-7 h-7 md:w-10 md:h-10 rounded-lg md:rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
-                                            <span className="material-icons text-white text-sm md:text-xl">auto_awesome</span>
+                                        <div className="relative group">
+                                            <div className="absolute -inset-1 bg-primary/40 blur-md rounded-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            <div className="relative w-8 h-8 md:w-11 md:h-11 rounded-lg md:rounded-2xl bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shadow-lg shadow-primary/30">
+                                                <span className="material-icons text-white text-xs md:text-xl">auto_awesome</span>
+                                            </div>
                                         </div>
                                     ) : (
-                                        <div className="w-7 h-7 md:w-10 md:h-10 rounded-lg md:rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
-                                            <span className="material-icons text-hero-sub text-sm md:text-xl">person</span>
+                                        <div className="w-8 h-8 md:w-11 md:h-11 rounded-lg md:rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center backdrop-blur-sm">
+                                            <span className="material-icons text-hero-sub text-xs md:text-xl">person</span>
                                         </div>
                                     )}
                                 </div>
 
                                 {/* Bubble */}
-                                <div className="max-w-[85%] md:max-w-[80%] lg:max-w-[70%] space-y-1.5 min-w-0">
-                                    <div className={`p-3.5 md:p-6 rounded-[20px] md:rounded-[32px] text-[13px] md:text-sm leading-relaxed font-geist ${
+                                <div className={`max-w-[85%] md:max-w-[80%] lg:max-w-[75%] space-y-2 min-w-0 ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                                    <div className={`relative p-4 md:p-6 rounded-[22px] md:rounded-[32px] text-[13.5px] md:text-[15px] leading-relaxed font-geist transition-all duration-300 ${
                                         msg.role === 'user'
-                                        ? 'bg-primary text-white shadow-2xl shadow-primary/20 rounded-tr-sm'
-                                        : 'liquid-glass text-foreground border border-white/5 rounded-tl-sm shadow-xl'
+                                        ? 'bg-primary text-white shadow-2xl shadow-primary/10 rounded-tr-sm'
+                                        : 'liquid-glass text-foreground border border-white/10 rounded-tl-sm shadow-[0_8px_32px_rgba(0,0,0,0.2)]'
                                     }`}>
+                                        {msg.role === 'assistant' && (
+                                            <div className="absolute -top-1 -left-1 w-2 h-2 bg-primary rounded-full blur-[2px] opacity-50" />
+                                        )}
                                         {renderContent(msg.content)}
                                     </div>
-                                    <p className={`text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-hero-sub px-3 ${
-                                        msg.role === 'user' ? 'text-right' : 'text-left'
-                                    }`}>
-                                        {msg.role === 'assistant' ? 'CALYX AI' : (user?.name?.split(' ')[0] || 'User')}
-                                        <span className="mx-1.5 md:mx-2 opacity-20">/</span>
-                                        {msg.time}
-                                    </p>
+                                    <div className={`flex items-center gap-2 px-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                                        <p className="text-[9px] md:text-[11px] font-bold uppercase tracking-[0.15em] text-hero-sub opacity-40">
+                                            {msg.role === 'assistant' ? 'CALYX Intelligence' : (user?.name?.split(' ')[0] || 'Operator')}
+                                        </p>
+                                        <span className="w-1 h-1 rounded-full bg-white/10" />
+                                        <p className="text-[9px] md:text-[11px] font-medium text-hero-sub opacity-30">
+                                            {msg.time}
+                                        </p>
+                                    </div>
                                 </div>
                             </motion.div>
                         ))}
@@ -527,7 +541,7 @@ export default function Chat() {
                     <div className="max-w-4xl mx-auto relative group">
                         <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-[20px] md:rounded-[32px] blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
                         
-                        <div className="relative liquid-glass rounded-[22px] md:rounded-[32px] border border-white/10 p-1.5 md:p-2 flex items-center gap-2 shadow-2xl">
+                        <div className="relative liquid-glass rounded-[22px] md:rounded-[32px] border border-white/10 p-1 md:p-2 flex items-center gap-1 md:gap-2 shadow-2xl">
                             <button className="hidden sm:flex w-10 md:w-12 h-10 md:h-12 items-center justify-center rounded-xl md:rounded-2xl hover:bg-white/5 transition-colors text-hero-sub hover:text-foreground shrink-0">
                                 <span className="material-icons text-xl">add_circle_outline</span>
                             </button>
@@ -542,25 +556,25 @@ export default function Chat() {
                                     }
                                 }}
                                 rows={1}
-                                className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-[13px] md:text-sm text-white placeholder-hero-sub/50 py-2.5 md:py-3 px-2 md:px-3 resize-none font-geist max-h-40 min-w-0"
+                                className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-[14px] md:text-sm text-white placeholder-hero-sub/40 py-3 md:py-3 px-3 md:px-3 resize-none font-geist max-h-40 min-w-0"
                                 placeholder="Command CALYX..."
                             />
-                            <div className="flex items-center gap-1.5 md:gap-2 pr-1 md:pr-2 shrink-0">
-                                <Link to="/voice" className="w-9 h-9 md:w-11 md:h-11 flex items-center justify-center rounded-lg md:rounded-2xl hover:bg-white/5 transition-colors text-hero-sub hover:text-foreground">
-                                    <span className="material-icons text-lg md:text-xl">mic_none</span>
+                            <div className="flex items-center gap-1 md:gap-2 pr-1 md:pr-2 shrink-0">
+                                <Link to="/voice" className="w-10 h-10 md:w-11 md:h-11 flex items-center justify-center rounded-xl md:rounded-2xl hover:bg-white/5 transition-colors text-hero-sub hover:text-foreground">
+                                    <span className="material-icons text-xl md:text-xl">mic_none</span>
                                 </Link>
                                 <motion.button
                                     whileHover={input.trim() ? { scale: 1.05 } : {}}
                                     whileTap={input.trim() ? { scale: 0.95 } : {}}
                                     onClick={handleSend}
                                     disabled={!input.trim()}
-                                    className={`w-9 h-9 md:w-11 md:h-11 flex items-center justify-center rounded-lg md:rounded-2xl transition-all ${
+                                    className={`w-10 h-10 md:w-11 md:h-11 flex items-center justify-center rounded-xl md:rounded-2xl transition-all ${
                                         input.trim()
                                         ? 'bg-primary text-white shadow-lg shadow-primary/30'
                                         : 'bg-white/5 text-white/20 cursor-not-allowed'
                                     }`}
                                 >
-                                    <span className="material-icons text-lg md:text-xl">north</span>
+                                    <span className="material-icons text-xl md:text-xl">north</span>
                                 </motion.button>
                             </div>
                         </div>

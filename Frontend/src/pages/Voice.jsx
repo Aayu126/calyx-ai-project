@@ -28,12 +28,15 @@ export default function Voice() {
 
     // Build / rebuild recognition whenever the selected language changes
     useEffect(() => {
-        if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) return
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            console.warn("Speech Recognition API not supported in this browser.");
+            return;
+        }
 
         // Stop any existing session
         recognitionRef.current?.abort()
 
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
         const recognition = new SpeechRecognition()
         recognition.continuous = true
         recognition.interimResults = true
@@ -64,22 +67,32 @@ export default function Voice() {
             if (interimChunk) setInterimText(interimChunk)
         }
 
+        recognition.onstart = () => {
+            setListening(true);
+            setInterimText('');
+        };
+
         recognition.onerror = (e) => {
             console.warn('Speech recognition error:', e.error)
-            if (e.error === 'not-allowed') {
+            if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
                 setIsRecording(false)
                 setListening(false)
+            }
+            // Auto-restart on some non-fatal errors if recording
+            if (isRecording && (e.error === 'network' || e.error === 'no-speech')) {
+                try { recognition.start(); } catch(err) {}
             }
         }
 
         recognition.onend = () => {
             // On mobile, recognition often stops automatically.
             // If we are still 'recording', try to restart.
-            if (isRecording && recognitionRef.current) {
+            if (isRecording) {
                 try {
-                    recognitionRef.current.start()
+                    recognition.start()
                 } catch {
-                    // ignore
+                    setListening(false)
+                    setInterimText('')
                 }
             } else {
                 setListening(false)
@@ -88,6 +101,10 @@ export default function Voice() {
         }
 
         recognitionRef.current = recognition
+        
+        return () => {
+            recognition.abort();
+        };
     }, [selectedLang, isRecording])
 
     const toggleRecording = async () => {
@@ -106,10 +123,15 @@ export default function Voice() {
             // Start live Web Speech API transcription
             if (recognitionRef.current) {
                 try {
+                    // Mobile browsers require a fresh start call in the click handler
                     recognitionRef.current.start()
-                    setListening(true)
                 } catch (e) {
                     console.error("Recognition start error:", e)
+                    // If already started, ignore or abort and restart
+                    try {
+                        recognitionRef.current.abort();
+                        setTimeout(() => recognitionRef.current.start(), 100);
+                    } catch(err) {}
                 }
             }
 
@@ -148,7 +170,7 @@ export default function Voice() {
                 mediaRecorderRef.current = mediaRecorder
             } catch (err) {
                 console.error("Mic access failed:", err)
-                // If mic access fails, we still have Web Speech API if it started
+                // If mic access fails, alert the user or show a message
             }
         }
     }
@@ -392,7 +414,7 @@ export default function Voice() {
                                                 <span className="material-icons text-white text-xl">graphic_eq</span>
                                             </div>
                                             <div className="flex-1 flex items-center gap-0.5 md:gap-1 h-8 md:h-10">
-                                                {[...Array(window.innerWidth < 768 ? 16 : 24)].map((_, i) => (
+                                                {[...Array(30)].map((_, i) => (
                                                     <motion.div
                                                         key={i}
                                                         animate={{ 
@@ -404,7 +426,7 @@ export default function Voice() {
                                                             duration: 0.8,
                                                             delay: i * 0.05 
                                                         }}
-                                                        className="flex-1 bg-primary/40 rounded-full"
+                                                        className={`flex-1 bg-primary/40 rounded-full ${i > 15 ? 'hidden sm:block' : ''}`}
                                                     />
                                                 ))}
                                             </div>

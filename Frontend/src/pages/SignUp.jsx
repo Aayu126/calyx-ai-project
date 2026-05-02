@@ -51,22 +51,27 @@ export default function SignUp() {
 
             <div className="relative z-10 w-full max-w-md">
                 {/* Logo */}
-                <div className="text-center mb-10">
-                    <Link to="/" className="inline-flex items-center gap-3 mb-6 group">
+                <motion.div 
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-center mb-10"
+                >
+                    <Link to="/" className="inline-flex items-center gap-3 mb-6 group relative">
+                        <div className="absolute -inset-2 bg-primary/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
                         <img 
                             src="/logo.png" 
                             alt="CALYX" 
-                            className="w-10 h-10 object-contain group-hover:scale-110 transition-transform duration-300"
+                            className="w-10 h-10 md:w-12 md:h-12 object-contain group-hover:rotate-[360deg] transition-transform duration-1000 ease-in-out relative z-10"
                             onError={(e) => {
                                 e.target.style.display = 'none';
                                 e.target.nextSibling.style.display = 'block';
                             }}
                         />
-                        <span className="font-general font-bold tracking-tighter text-3xl text-foreground">CALYX</span>
+                        <span className="font-general font-bold tracking-tighter text-3xl md:text-4xl text-foreground relative z-10">CALYX</span>
                     </Link>
-                    <h1 className="text-3xl font-general font-bold mb-2 text-foreground">Create account</h1>
-                    <p className="text-sm text-hero-sub font-geist">Join the future of machine collaboration</p>
-                </div>
+                    <h1 className="text-3xl md:text-4xl font-general font-bold mb-3 text-foreground tracking-tight">Create account</h1>
+                    <p className="text-sm md:text-base text-hero-sub font-geist opacity-60">Join the next evolution of machine collaboration</p>
+                </motion.div>
 
                 {/* Form Card */}
                 <motion.div 
@@ -82,68 +87,78 @@ export default function SignUp() {
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div>
-                            <label className="block text-xs font-general font-bold text-hero-sub uppercase tracking-widest mb-2 ml-1">Full Name</label>
-                            <input
-                                type="text"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                required
-                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary/40 focus:outline-none transition-all placeholder-white/20 font-geist"
-                                placeholder="John Doe"
-                            />
+                    <form onSubmit={handleSubmit} className="space-y-6 md:space-y-7">
+                        <div className="group/input">
+                            <label className="block text-[10px] font-general font-bold text-hero-sub uppercase tracking-[0.2em] mb-2.5 ml-1 opacity-60 group-focus-within/input:opacity-100 transition-opacity">Full Name</label>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    required
+                                    className="w-full bg-white/[0.03] border border-white/5 rounded-2xl px-6 py-4.5 text-sm text-foreground focus:ring-4 focus:ring-primary/10 focus:border-primary/30 focus:outline-none transition-all placeholder-white/10 font-geist"
+                                    placeholder="John Doe"
+                                />
+                                <div className="absolute inset-0 rounded-2xl ring-1 ring-white/5 pointer-events-none group-hover/input:ring-white/10 transition-all" />
+                            </div>
                         </div>
-                        <div>
-                            <label className="block text-xs font-general font-bold text-hero-sub uppercase tracking-widest mb-2 ml-1">Email Address</label>
-                            <input
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary/40 focus:outline-none transition-all placeholder-white/20 font-geist"
-                                placeholder="you@example.com"
-                            />
+                        <div className="group/input">
+                            <label className="block text-[10px] font-general font-bold text-hero-sub uppercase tracking-[0.2em] mb-2.5 ml-1 opacity-60 group-focus-within/input:opacity-100 transition-opacity">Email Address</label>
+                            <div className="relative">
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                    className="w-full bg-white/[0.03] border border-white/5 rounded-2xl px-6 py-4.5 text-sm text-foreground focus:ring-4 focus:ring-primary/10 focus:border-primary/30 focus:outline-none transition-all placeholder-white/10 font-geist"
+                                    placeholder="you@example.com"
+                                />
+                                <div className="absolute inset-0 rounded-2xl ring-1 ring-white/5 pointer-events-none group-hover/input:ring-white/10 transition-all" />
+                            </div>
                         </div>
-                        <div>
-                            <label className="block text-xs font-general font-bold text-hero-sub uppercase tracking-widest mb-2 ml-1">Password</label>
-                            <input
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                minLength={8}
-                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary/40 focus:outline-none transition-all placeholder-white/20 font-geist"
-                                placeholder="Min. 8 characters"
-                            />
+                        <div className="group/input">
+                            <label className="block text-[10px] font-general font-bold text-hero-sub uppercase tracking-[0.2em] mb-2.5 ml-1 opacity-60 group-focus-within/input:opacity-100 transition-opacity">Security Key</label>
+                            <div className="relative">
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                    minLength={8}
+                                    className="w-full bg-white/[0.03] border border-white/5 rounded-2xl px-6 py-4.5 text-sm text-foreground focus:ring-4 focus:ring-primary/10 focus:border-primary/30 focus:outline-none transition-all placeholder-white/10 font-geist"
+                                    placeholder="Min. 8 characters"
+                                />
+                                <div className="absolute inset-0 rounded-2xl ring-1 ring-white/5 pointer-events-none group-hover/input:ring-white/10 transition-all" />
+                            </div>
                         </div>
 
                         {/* Terms */}
-                        <label className="flex items-start gap-3 cursor-pointer group">
-                            <input
-                                type="checkbox"
-                                checked={agreed}
-                                onChange={(e) => setAgreed(e.target.checked)}
-                                className="mt-1 rounded-md border-white/10 bg-white/5 text-primary focus:ring-primary/20 transition-all"
-                            />
-                            <span className="text-[11px] text-hero-sub leading-relaxed font-geist group-hover:text-foreground transition-colors">
+                        <label className="flex items-start gap-4 cursor-pointer group/terms">
+                            <div className="mt-1 relative flex items-center justify-center">
+                                <input
+                                    type="checkbox"
+                                    checked={agreed}
+                                    onChange={(e) => setAgreed(e.target.checked)}
+                                    className="w-4 h-4 rounded-md border-white/10 bg-white/5 text-primary focus:ring-primary/20 transition-all appearance-none checked:bg-primary"
+                                />
+                                {agreed && <span className="material-icons absolute text-[10px] text-white pointer-events-none">check</span>}
+                            </div>
+                            <span className="text-[11px] md:text-xs text-hero-sub leading-relaxed font-geist group-hover/terms:text-foreground transition-colors opacity-70">
                                 I agree to the <a href="#" className="text-primary font-bold hover:text-blue-400">Terms of Service</a> and <a href="#" className="text-primary font-bold hover:text-blue-400">Privacy Policy</a>
                             </span>
                         </label>
 
                         <motion.button
-                            whileHover={{ scale: 1.01 }}
-                            whileTap={{ scale: 0.99 }}
+                            whileHover={{ scale: 1.015, y: -2 }}
+                            whileTap={{ scale: 0.985 }}
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-primary text-white font-general font-bold py-4 rounded-2xl hover:bg-blue-600 shadow-xl shadow-primary/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2 uppercase tracking-widest text-xs"
+                            className="relative group/btn w-full bg-primary text-white font-general font-bold py-5 rounded-2xl shadow-2xl shadow-primary/30 transition-all disabled:opacity-50 flex items-center justify-center gap-3 uppercase tracking-[0.25em] text-[10px] overflow-hidden"
                         >
-                            {loading ? (
-                                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                </svg>
-                            ) : 'Create Account'}
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000" />
+                            <span className="relative z-10">
+                                {loading ? 'Synchronizing...' : 'Establish Profile'}
+                            </span>
                         </motion.button>
                     </form>
 

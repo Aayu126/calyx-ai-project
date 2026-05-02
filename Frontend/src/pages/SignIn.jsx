@@ -61,18 +61,27 @@ export default function SignIn() {
 
             <div className="relative z-10 w-full max-w-md">
                 {/* Logo */}
-                <div className="text-center mb-10">
-                    <Link to="/" className="inline-flex items-center gap-3 mb-6 group">
+                <motion.div 
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-center mb-10"
+                >
+                    <Link to="/" className="inline-flex items-center gap-3 mb-6 group relative">
+                        <div className="absolute -inset-2 bg-primary/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
                         <img 
                             src="/logo.png" 
                             alt="CALYX" 
-                            className="w-10 h-10 object-contain group-hover:scale-110 transition-transform duration-300"
+                            className="w-10 h-10 md:w-12 md:h-12 object-contain group-hover:rotate-[360deg] transition-transform duration-1000 ease-in-out relative z-10"
+                            onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'block';
+                            }}
                         />
-                        <span className="font-general font-bold tracking-tighter text-3xl text-foreground">CALYX</span>
+                        <span className="font-general font-bold tracking-tighter text-3xl md:text-4xl text-foreground relative z-10">CALYX</span>
                     </Link>
-                    <h1 className="text-3xl font-general font-bold mb-2 text-foreground">Welcome back</h1>
-                    <p className="text-sm text-hero-sub font-geist">Enter your credentials to access your workspace</p>
-                </div>
+                    <h1 className="text-3xl md:text-4xl font-general font-bold mb-3 text-foreground tracking-tight">Welcome back</h1>
+                    <p className="text-sm md:text-base text-hero-sub font-geist opacity-60">Enter your credentials to access your workspace</p>
+                </motion.div>
 
                 {/* Form Card */}
                 <motion.div 
@@ -88,46 +97,50 @@ export default function SignIn() {
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div>
-                            <label className="block text-xs font-general font-bold text-hero-sub uppercase tracking-widest mb-2 ml-1">Email Address</label>
-                            <input
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary/40 focus:outline-none transition-all placeholder-white/20 font-geist"
-                                placeholder="you@example.com"
-                            />
-                        </div>
-                        <div>
-                            <div className="flex items-center justify-between mb-2 ml-1">
-                                <label className="block text-xs font-general font-bold text-hero-sub uppercase tracking-widest">Password</label>
-                                <a href="#" className="text-[10px] text-primary hover:text-blue-400 font-bold uppercase tracking-wider">Forgot?</a>
+                    <form onSubmit={handleSubmit} className="space-y-6 md:space-y-7">
+                        <div className="group/input">
+                            <label className="block text-[10px] font-general font-bold text-hero-sub uppercase tracking-[0.2em] mb-2.5 ml-1 opacity-60 group-focus-within/input:opacity-100 transition-opacity">Email Address</label>
+                            <div className="relative">
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                    className="w-full bg-white/[0.03] border border-white/5 rounded-2xl px-6 py-4.5 text-sm text-foreground focus:ring-4 focus:ring-primary/10 focus:border-primary/30 focus:outline-none transition-all placeholder-white/10 font-geist"
+                                    placeholder="you@example.com"
+                                />
+                                <div className="absolute inset-0 rounded-2xl ring-1 ring-white/5 pointer-events-none group-hover/input:ring-white/10 transition-all" />
                             </div>
-                            <input
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary/40 focus:outline-none transition-all placeholder-white/20 font-geist"
-                                placeholder="••••••••"
-                            />
+                        </div>
+                        <div className="group/input">
+                            <div className="flex items-center justify-between mb-2.5 ml-1">
+                                <label className="block text-[10px] font-general font-bold text-hero-sub uppercase tracking-[0.2em] opacity-60 group-focus-within/input:opacity-100 transition-opacity">Security Key</label>
+                                <a href="#" className="text-[9px] text-primary hover:text-blue-400 font-bold uppercase tracking-wider opacity-60 hover:opacity-100 transition-opacity">Reset Passcode?</a>
+                            </div>
+                            <div className="relative">
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                    className="w-full bg-white/[0.03] border border-white/5 rounded-2xl px-6 py-4.5 text-sm text-foreground focus:ring-4 focus:ring-primary/10 focus:border-primary/30 focus:outline-none transition-all placeholder-white/10 font-geist"
+                                    placeholder="••••••••"
+                                />
+                                <div className="absolute inset-0 rounded-2xl ring-1 ring-white/5 pointer-events-none group-hover/input:ring-white/10 transition-all" />
+                            </div>
                         </div>
 
                         <motion.button
-                            whileHover={{ scale: 1.01 }}
-                            whileTap={{ scale: 0.99 }}
+                            whileHover={{ scale: 1.015, y: -2 }}
+                            whileTap={{ scale: 0.985 }}
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-primary text-white font-general font-bold py-4 rounded-2xl hover:bg-blue-600 shadow-xl shadow-primary/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2 uppercase tracking-widest text-xs"
+                            className="relative group/btn w-full bg-primary text-white font-general font-bold py-5 rounded-2xl shadow-2xl shadow-primary/30 transition-all disabled:opacity-50 flex items-center justify-center gap-3 uppercase tracking-[0.25em] text-[10px] overflow-hidden"
                         >
-                            {loading ? (
-                                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                </svg>
-                            ) : 'Sign In'}
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000" />
+                            <span className="relative z-10">
+                                {loading ? 'Synchronizing...' : 'Authorize Access'}
+                            </span>
                         </motion.button>
                     </form>
 
