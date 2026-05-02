@@ -1,8 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { transcribeAudio, textToSpeech } from '../services/api'
 
-// Error Boundary for Voice Module
 class VoiceErrorBoundary extends React.Component {
     constructor(props) {
         super(props);
@@ -43,9 +42,11 @@ function VoiceContent() {
     const [listening, setListening] = useState(false)
     const [ttsText, setTtsText] = useState('')
     const [playing, setPlaying] = useState(false)
-    const [selectedLang, setSelectedLang] = useState('')   // '' = auto detect
+    const [selectedLang, setSelectedLang] = useState('')
     const [detectedLang, setDetectedLang] = useState('')
     const [isSupported, setIsSupported] = useState(true)
+    const [isSecureContext, setIsSecureContext] = useState(true)
+    const [ttsError, setTtsError] = useState('')
     
     const recognitionRef = useRef(null)
     const mediaRecorderRef = useRef(null)
@@ -54,18 +55,39 @@ function VoiceContent() {
     const audioContextRef = useRef(null)
     const analyserRef = useRef(null)
     const animationFrameRef = useRef(null)
+    const isRecordingRef = useRef(false)
+    const ttsAudioRef = useRef(null)
+    const streamRef = useRef(null)
 
-    // Unlock AudioContext for mobile browsers
-    const unlockAudioContext = async () => {
-        if (!audioContextRef.current) {
+    useEffect(() => {
+        isRecordingRef.current = isRecording
+    }, [isRecording])
+
+    useEffect(() => {
+        setIsSecureContext(window.isSecureContext || location.protocol === 'https:' || location.hostname === 'localhost')
+    }, [])
+
+    const unlockAudioContext = useCallback(async () => {
+        if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
             audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)()
         }
         if (audioContextRef.current.state === 'suspended') {
             await audioContextRef.current.resume()
         }
-    }
+    }, [])
 
-    // Build / rebuild recognition whenever the selected language changes
+    const startRecognition = useCallback((recognition) => {
+        try {
+            if (recognitionRef.current === recognition) {
+                recognition.start()
+            }
+        } catch (e) {
+            if (e.message && !e.message.includes('already started')) {
+                console.error("Recognition start error:", e)
+            }
+        }
+    }, [])
+
     useEffect(() => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
@@ -73,13 +95,16 @@ function VoiceContent() {
             return;
         }
 
-        recognitionRef.current?.abort()
+        if (recognitionRef.current) {
+            recognitionRef.current.onend = () => {}
+            recognitionRef.current.abort()
+        }
 
         const recognition = new SpeechRecognition()
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         
-        recognition.continuous = !isMobile;
+        recognition.continuous = true;
         recognition.interimResults = true;
+        recognition.maxAlternatives = 1;
         recognition.lang = selectedLang || 'en-US'
 
         recognition.onresult = (event) => {
@@ -98,8 +123,10 @@ function VoiceContent() {
 
             if (finalChunk) {
                 setTranscript((prev) => {
+                    const clean = finalChunk.trim()
+                    if (!clean) return prev
                     const separator = (prev && !prev.endsWith(' ') && !prev.endsWith('.') && !prev.endsWith('\n')) ? ' ' : ''
-                    return prev + separator + finalChunk.trim()
+                    return prev + separator + clean
                 })
                 setInterimText('')
             }
@@ -116,37 +143,35 @@ function VoiceContent() {
             if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
                 setIsRecording(false)
                 setListening(false)
-            }
-            if (isRecording && (e.error === 'network' || e.error === 'no-speech')) {
-                setTimeout(() => {
-                    if (isRecording) {
-                        try { recognition.start(); } catch(err) {}
-                    }
-                }, 100);
+                isRecordingRef.current = false
             }
         }
 
         recognition.onend = () => {
-            if (isRecording) {
+            setListening(false)
+            if (isRecordingRef.current) {
                 setTimeout(() => {
-                    if (isRecording) {
-                        try { recognition.start(); } catch(err) {}
+                    if (isRecordingRef.current && recognitionRef.current === recognition) {
+                        try {
+                            recognition.start()
+                            setListening(true)
+                        } catch(err) {
+                            console.warn("Recognition restart failed:", err)
+                        }
                     }
                 }, 100);
-            } else {
-                setListening(false)
-                setInterimText('')
             }
         }
 
         recognitionRef.current = recognition
         
         return () => {
+            recognition.onend = () => {}
             recognition.abort();
         };
-    }, [selectedLang, isRecording])
+    }, [selectedLang])
 
-    const startVisualizer = (stream) => {
+    const startVisualizer = useCallback((stream) => {
         const audioContext = new (window.AudioContext || window.webkitAudioContext)()
         const analyser = audioContext.createAnalyser()
         const source = audioContext.createMediaStreamSource(stream)
@@ -160,7 +185,6 @@ function VoiceContent() {
         const dataArray = new Uint8Array(bufferLength)
 
         const updateVolume = () => {
-            if (!isRecording) return
             analyser.getByteFrequencyData(dataArray)
             let sum = 0
             for (let i = 0; i < bufferLength; i++) {
@@ -168,48 +192,76 @@ function VoiceContent() {
             }
             const average = sum / bufferLength
             setVolume(average)
-            animationFrameRef.current = requestAnimationFrame(updateVolume)
+            if (isRecordingRef.current) {
+                animationFrameRef.current = requestAnimationFrame(updateVolume)
+            }
         }
         updateVolume()
-    }
+    }, [])
+
+    const stopAllRecording = useCallback(() => {
+        setIsRecording(false)
+        setListening(false)
+        setVolume(0)
+        isRecordingRef.current = false
+        
+        if (recognitionRef.current) {
+            try { recognitionRef.current.stop(); } catch(e) {}
+        }
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+            try { mediaRecorderRef.current.stop(); } catch(e) {}
+        }
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach((t) => t.stop())
+            streamRef.current = null
+        }
+        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
+        if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+            try { audioContextRef.current.close(); } catch(e) {}
+        }
+    }, [])
 
     const toggleRecording = async () => {
         if (isRecording) {
-            setIsRecording(false)
-            setListening(false)
-            setVolume(0)
-            recognitionRef.current?.stop()
-            mediaRecorderRef.current?.stop()
-            
-            if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
-            if (audioContextRef.current) audioContextRef.current.close()
+            stopAllRecording()
         } else {
             setTranscript('')
             setInterimText('')
             setDetectedLang('')
+            setTtsError('')
             
             await unlockAudioContext()
             
             setIsRecording(true)
+            isRecordingRef.current = true
 
             if (recognitionRef.current) {
-                try {
-                    recognitionRef.current.abort()
-                    recognitionRef.current.start()
-                } catch (e) {
-                    console.error("Recognition start error:", e)
-                }
+                startRecognition(recognitionRef.current)
             }
 
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    } 
+                })
+                streamRef.current = stream
                 startVisualizer(stream)
                 
-                const mimeType = MediaRecorder.isTypeSupported('audio/webm') 
-                    ? 'audio/webm' 
-                    : (MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : 'audio/ogg')
+                let mimeType = ''
+                if (MediaRecorder.isTypeSupported('audio/webm')) {
+                    mimeType = 'audio/webm'
+                } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+                    mimeType = 'audio/mp4'
+                } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
+                    mimeType = 'audio/ogg'
+                } else {
+                    mimeType = ''
+                }
                 
-                const mediaRecorder = new MediaRecorder(stream, { mimeType })
+                const mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined)
                 chunksRef.current = []
 
                 mediaRecorder.ondataavailable = (e) => {
@@ -217,25 +269,27 @@ function VoiceContent() {
                 }
                 
                 mediaRecorder.onstop = async () => {
-                    const audioBlob = new Blob(chunksRef.current, { type: mimeType })
-                    stream.getTracks().forEach((t) => t.stop())
+                    const audioBlob = new Blob(chunksRef.current, { type: mimeType || 'audio/webm' })
 
                     try {
                         const data = await transcribeAudio(audioBlob, selectedLang)
-                        if (data.text && data.text.trim().length > (transcript || '').length) {
-                            setTranscript(data.text)
+                        if (data.text && data.text.trim().length > 0) {
+                            setTranscript((prev) => {
+                                const clean = data.text.trim()
+                                if (prev && prev.length >= clean.length) return prev
+                                return clean
+                            })
                         }
                     } catch (err) {
                         console.error("Backend transcription failed:", err)
                     }
                 }
 
-                mediaRecorder.start()
+                mediaRecorder.start(1000)
                 mediaRecorderRef.current = mediaRecorder
             } catch (err) {
                 console.error("Microphone access error:", err)
-                setIsRecording(false)
-                setListening(false)
+                stopAllRecording()
             }
         }
     }
@@ -243,20 +297,90 @@ function VoiceContent() {
     const handleTTS = async () => {
         if (!ttsText.trim()) return
         setPlaying(true)
+        setTtsError('')
+        
+        if (ttsAudioRef.current) {
+            ttsAudioRef.current.pause()
+            ttsAudioRef.current = null
+        }
+
         try {
             const blob = await textToSpeech(ttsText)
             const url = URL.createObjectURL(blob)
             const audio = new Audio(url)
-            audio.onended = () => {
+            ttsAudioRef.current = audio
+            
+            audio.addEventListener('ended', () => {
                 setPlaying(false)
                 URL.revokeObjectURL(url)
+                ttsAudioRef.current = null
+            })
+            
+            audio.addEventListener('error', () => {
+                setPlaying(false)
+                URL.revokeObjectURL(url)
+                ttsAudioRef.current = null
+                setTtsError('Playback failed. Trying browser speech synthesis...')
+                fallbackBrowserTTS(ttsText)
+            })
+
+            const playPromise = audio.play()
+            if (playPromise !== undefined) {
+                playPromise.catch((err) => {
+                    console.warn("Audio play failed:", err)
+                    URL.revokeObjectURL(url)
+                    ttsAudioRef.current = null
+                    setTtsError('Autoplay blocked. Tap to try again.')
+                    setPlaying(false)
+                })
             }
-            await audio.play()
         } catch (err) {
             console.error("TTS failed:", err)
             setPlaying(false)
+            setTtsError('Backend TTS unavailable. Using browser speech...')
+            fallbackBrowserTTS(ttsText)
         }
     }
+
+    const fallbackBrowserTTS = useCallback((text) => {
+        if (!window.speechSynthesis) {
+            setTtsError('Speech synthesis not supported on this device')
+            return
+        }
+        
+        window.speechSynthesis.cancel()
+        
+        const utterance = new SpeechSynthesisUtterance(text)
+        const langCode = selectedLang || 'en-US'
+        utterance.lang = langCode
+        utterance.rate = 1.0
+        utterance.pitch = 1.0
+        
+        utterance.onstart = () => setPlaying(true)
+        utterance.onend = () => setPlaying(false)
+        utterance.onerror = () => setPlaying(false)
+        
+        window.speechSynthesis.speak(utterance)
+    }, [selectedLang])
+
+    const stopPlayback = useCallback(() => {
+        if (ttsAudioRef.current) {
+            ttsAudioRef.current.pause()
+            ttsAudioRef.current = null
+        }
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel()
+        }
+        setPlaying(false)
+        setTtsError('')
+    }, [])
+
+    useEffect(() => {
+        return () => {
+            stopAllRecording()
+            stopPlayback()
+        }
+    }, [stopAllRecording, stopPlayback])
 
     if (!isSupported) {
         return (
@@ -271,6 +395,18 @@ function VoiceContent() {
         )
     }
 
+    if (!isSecureContext) {
+        return (
+            <div className="flex flex-col items-center justify-center p-12 text-center mt-20">
+                <span className="material-icons text-6xl text-yellow-500 mb-6">lock_open</span>
+                <h2 className="text-2xl font-bold mb-4">Secure Connection Required</h2>
+                <p className="text-foreground/60 max-w-md mx-auto">
+                    Voice features require HTTPS. Please access this site via a secure connection.
+                </p>
+            </div>
+        )
+    }
+
     return (
         <div className="text-foreground font-geist selection:bg-primary/30">
             <main className="pt-24 md:pt-32 pb-20">
@@ -279,7 +415,6 @@ function VoiceContent() {
                     animate={{ opacity: 1 }}
                     className="max-w-7xl mx-auto px-4 md:px-8"
                 >
-                    {/* Header */}
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
@@ -316,7 +451,6 @@ function VoiceContent() {
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
-                        {/* Recording Section */}
                         <motion.div 
                             initial={{ opacity: 0, x: -30 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -343,17 +477,16 @@ function VoiceContent() {
                                     <div className={`absolute inset-0 bg-primary/20 blur-[60px] transition-opacity duration-1000 ${isRecording ? 'opacity-100' : 'opacity-0'}`} />
                                     <button
                                         onClick={toggleRecording}
-                                        className={`relative w-28 h-28 md:w-36 md:h-36 rounded-full flex items-center justify-center transition-all duration-500 ${
+                                        className={`relative w-28 h-28 md:w-36 md:h-36 rounded-full flex items-center justify-center transition-all duration-500 active:scale-95 ${
                                             isRecording 
                                             ? 'bg-red-500 shadow-[0_0_50px_rgba(239,68,68,0.3)]' 
-                                            : 'bg-primary shadow-[0_0_50px_rgba(19,127,236,0.3)] hover:scale-105'
+                                            : 'bg-primary shadow-[0_0_50px_rgba(19,127,236,0.3)]'
                                         }`}
                                     >
                                         <span className="material-icons text-white text-4xl md:text-5xl">
                                             {isRecording ? 'stop' : 'mic'}
                                         </span>
                                         
-                                        {/* Pulse Circles */}
                                         <AnimatePresence>
                                             {isRecording && (
                                                 <>
@@ -383,14 +516,13 @@ function VoiceContent() {
                                             <motion.div
                                                 key={i}
                                                 animate={{ 
-                                                    height: Math.max(4, (volume * (0.5 + Math.random() * 0.5)) * (i < 8 ? (i+1)/8 : (16-i)/8) * 1.5)
+                                                    height: [4, Math.max(8, volume * 1.5), 4]
                                                 }}
                                                 className="w-1.5 md:w-2 bg-primary/40 rounded-full"
                                                 transition={{ 
-                                                    type: "spring", 
-                                                    stiffness: 300, 
-                                                    damping: 20,
-                                                    delay: i * 0.02
+                                                    repeat: Infinity, 
+                                                    duration: 0.4 + Math.random() * 0.3,
+                                                    delay: i * 0.05
                                                 }}
                                             />
                                         ))}
@@ -398,7 +530,6 @@ function VoiceContent() {
                                 )}
                             </div>
 
-                            {/* Transcription Box */}
                             <div className="relative group">
                                 <div className={`absolute -inset-[1px] bg-gradient-to-r from-primary/20 via-blue-500/20 to-emerald-500/20 blur-[2px] rounded-[1.5rem] transition-opacity duration-500 ${isRecording ? 'opacity-100' : 'opacity-0'}`} />
                                 <div className="relative min-h-[140px] md:min-h-[160px] bg-white/[0.02] rounded-[1.25rem] md:rounded-[1.5rem] p-5 md:p-6 border border-white/[0.08] font-geist backdrop-blur-sm">
@@ -423,7 +554,11 @@ function VoiceContent() {
                             {transcript && (
                                 <div className="flex gap-3 md:gap-4 mt-5 md:mt-6">
                                     <button
-                                        onClick={() => navigator.clipboard.writeText(transcript)}
+                                        onClick={() => {
+                                            if (navigator.clipboard && navigator.clipboard.writeText) {
+                                                navigator.clipboard.writeText(transcript)
+                                            }
+                                        }}
                                         className="flex-1 bg-white/5 hover:bg-white/10 text-[10px] md:text-xs font-bold uppercase tracking-widest py-3.5 md:py-4 rounded-xl transition-all flex items-center justify-center gap-2 border border-white/[0.05]"
                                     >
                                         <span className="material-icons text-sm">content_copy</span>
@@ -439,7 +574,6 @@ function VoiceContent() {
                             )}
                         </motion.div>
 
-                        {/* Text to Speech Section */}
                         <motion.div 
                             initial={{ opacity: 0, x: 30 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -463,7 +597,16 @@ function VoiceContent() {
                                 />
                             </div>
 
-                            {/* Waveform / Playback UI */}
+                            {ttsError && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="mb-4 px-4 py-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs"
+                                >
+                                    {ttsError}
+                                </motion.div>
+                            )}
+
                             <AnimatePresence>
                                 {playing && (
                                     <motion.div 
@@ -493,7 +636,12 @@ function VoiceContent() {
                                                     />
                                                 ))}
                                             </div>
-                                            <span className="text-[9px] md:text-[10px] font-mono text-primary font-bold">LIVE</span>
+                                            <button 
+                                                onClick={stopPlayback}
+                                                className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center hover:bg-red-500/30 transition-colors shrink-0"
+                                            >
+                                                <span className="material-icons text-red-400 text-sm">stop</span>
+                                            </button>
                                         </div>
                                     </motion.div>
                                 )}
@@ -504,7 +652,7 @@ function VoiceContent() {
                                 disabled={!ttsText.trim() || playing}
                                 className={`w-full py-4 md:py-5 rounded-[1.25rem] md:rounded-[1.5rem] text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-center gap-3 ${
                                     ttsText.trim() && !playing
-                                    ? 'bg-primary text-white shadow-[0_0_30px_rgba(19,127,236,0.2)] hover:shadow-[0_0_50px_rgba(19,127,236,0.4)] md:hover:-translate-y-1'
+                                    ? 'bg-primary text-white shadow-[0_0_30px_rgba(19,127,236,0.2)] hover:shadow-[0_0_50px_rgba(19,127,236,0.4)]'
                                     : 'bg-white/[0.03] text-foreground/20 border border-white/[0.05] cursor-not-allowed'
                                 }`}
                             >
