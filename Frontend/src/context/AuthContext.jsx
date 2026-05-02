@@ -9,28 +9,32 @@ export function AuthProvider({ children }) {
 
     const API_URL = import.meta.env.VITE_API_URL || 'https://calyx-ai-backend-wl72.onrender.com/api'
 
+    const decodeAndSetUser = (tkn) => {
+        try {
+            const base64Url = tkn.split('.')[1]
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+            }).join(''))
+            
+            const payload = JSON.parse(jsonPayload)
+            setUser({ 
+                id: payload.sub, 
+                name: payload.name, 
+                email: payload.email, 
+                picture: payload.picture 
+            })
+            return true
+        } catch (e) {
+            console.error('Token decode failed:', e)
+            return false
+        }
+    }
+
     useEffect(() => {
         if (token) {
             localStorage.setItem('calyx_token', token)
-            // Decode JWT payload to get user info safely
-            try {
-                const base64Url = token.split('.')[1]
-                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
-                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-                }).join(''))
-                
-                const payload = JSON.parse(jsonPayload)
-                setUser({ 
-                    id: payload.sub, 
-                    name: payload.name, 
-                    email: payload.email, 
-                    picture: payload.picture 
-                })
-            } catch (e) {
-                console.error('Token decode failed:', e)
-                logout() // Clear invalid token
-            }
+            decodeAndSetUser(token)
         } else {
             localStorage.removeItem('calyx_token')
             setUser(null)
@@ -48,7 +52,8 @@ export function AuthProvider({ children }) {
             })
             const data = await res.json()
             if (res.ok) {
-                // Set token first, the useEffect will handle setUser
+                localStorage.setItem('calyx_token', data.token)
+                decodeAndSetUser(data.token)
                 setToken(data.token)
                 return { success: true }
             }
@@ -70,6 +75,8 @@ export function AuthProvider({ children }) {
             })
             const data = await res.json()
             if (res.ok) {
+                localStorage.setItem('calyx_token', data.token)
+                decodeAndSetUser(data.token)
                 setToken(data.token)
                 return { success: true }
             }
@@ -90,11 +97,13 @@ export function AuthProvider({ children }) {
         const picture = searchParams.get('picture')
         
         if (tkn) {
-            // Set token and localStorage immediately
             localStorage.setItem('calyx_token', tkn)
             
-            // Explicitly set user details immediately from params to avoid flicker
-            if (name && email) {
+            // Try to set user from token first (more reliable id/sub)
+            const decoded = decodeAndSetUser(tkn)
+            
+            // Fallback to params if decoding fails but we have params
+            if (!decoded && name && email) {
                 setUser({ 
                     name: decodeURIComponent(name), 
                     email: decodeURIComponent(email), 
@@ -102,8 +111,8 @@ export function AuthProvider({ children }) {
                 })
             }
             
-            // Finally set token state which will also trigger the decoder useEffect (safe)
             setToken(tkn)
+            setLoading(false)
             return true
         }
         setLoading(false) // Reset loading if no token found
