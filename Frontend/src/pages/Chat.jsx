@@ -19,7 +19,7 @@ export default function Chat() {
     const [messages, setMessages] = useState(INITIAL_MESSAGES)
     const [input, setInput] = useState('')
     const [isTyping, setIsTyping] = useState(false)
-    const [sidebarOpen, setSidebarOpen] = useState(true)
+    const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768)
 
     // Conversation state
     const [conversations, setConversations] = useState([])
@@ -27,6 +27,16 @@ export default function Chat() {
 
     const chatEndRef = useRef(null)
     const inputRef = useRef(null)
+
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth <= 768 && sidebarOpen) {
+                setSidebarOpen(false)
+            }
+        }
+        window.addEventListener('resize', handleResize)
+        return () => window.removeEventListener('resize', handleResize)
+    }, [sidebarOpen])
 
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -201,53 +211,71 @@ export default function Chat() {
             </div>
 
             {/* Left Sidebar */}
-            <aside className={`${sidebarOpen ? 'w-72' : 'w-0'} transition-all duration-500 ease-in-out overflow-hidden relative z-20 flex flex-col border-r border-white/5 bg-black/20 backdrop-blur-xl`}>
-                <div className="p-6">
-                    <Link to="/" className="flex items-center gap-3 mb-8 group">
-                        <img 
-                            src="/logo.png" 
-                            alt="CALYX" 
-                            className="w-8 h-8 object-contain group-hover:scale-110 transition-transform duration-300"
-                        />
-                        <span className="font-general font-bold tracking-tighter text-xl text-foreground">CALYX</span>
-                    </Link>
+            <aside 
+                className={`fixed md:relative top-0 left-0 h-full z-40 transition-all duration-500 ease-in-out flex flex-col border-r border-white/5 bg-[#050505]/95 backdrop-blur-2xl md:bg-black/20 ${
+                    sidebarOpen ? 'w-64 md:w-72 translate-x-0' : 'w-0 -translate-x-full md:translate-x-0 md:w-0'
+                }`}
+            >
+                <div className="p-4 md:p-6">
+                    <div className="flex items-center justify-between mb-6 md:mb-8">
+                        <Link to="/" className="flex items-center gap-2 md:gap-3 group">
+                            <img 
+                                src="/logo.png" 
+                                alt="CALYX" 
+                                className="w-6 h-6 md:w-8 md:h-8 object-contain"
+                            />
+                            <span className="font-general font-bold tracking-tighter text-lg md:text-xl text-foreground">CALYX</span>
+                        </Link>
+                        <button 
+                            onClick={() => setSidebarOpen(false)}
+                            className="md:hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10"
+                        >
+                            <span className="material-icons text-hero-sub text-xl">close</span>
+                        </button>
+                    </div>
                     <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={handleNewChat}
-                        className="w-full bg-primary text-white font-general font-bold text-xs uppercase tracking-widest py-3.5 rounded-2xl transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
+                        onClick={() => {
+                            handleNewChat()
+                            if (window.innerWidth < 768) setSidebarOpen(false)
+                        }}
+                        className="w-full bg-primary text-white font-general font-bold text-[10px] md:text-xs uppercase tracking-widest py-3 md:py-3.5 rounded-xl md:rounded-2xl transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
                     >
-                        <span className="material-icons text-base">add</span>
+                        <span className="material-icons text-sm md:text-base">add</span>
                         New Chat
                     </motion.button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto chat-scroll px-4">
+                <div className="flex-1 overflow-y-auto chat-scroll px-3 md:px-4">
                     <AnimatePresence>
                     {conversations.length > 0 ? (
-                        <div className="space-y-6">
+                        <div className="space-y-4 md:space-y-6">
                             <div>
-                                <p className="text-[10px] font-general font-bold uppercase tracking-[0.2em] text-hero-sub px-3 mb-4">History</p>
+                                <p className="text-[8px] md:text-[10px] font-general font-bold uppercase tracking-[0.2em] text-hero-sub px-3 mb-3 md:mb-4">History</p>
                                 <div className="space-y-1">
                                     {conversations.map((conv) => (
                                         <button
                                             key={conv.id}
-                                            onClick={() => handleLoadConversation(conv.id)}
-                                            className={`w-full text-left px-4 py-3 rounded-2xl transition-all group flex items-center gap-3 ${activeConvId === conv.id 
+                                            onClick={() => {
+                                                handleLoadConversation(conv.id)
+                                                if (window.innerWidth < 768) setSidebarOpen(false)
+                                            }}
+                                            className={`w-full text-left px-3 md:px-4 py-2.5 md:py-3 rounded-xl md:rounded-2xl transition-all group flex items-center gap-2 md:gap-3 ${activeConvId === conv.id 
                                                 ? 'bg-white/10 text-foreground ring-1 ring-white/10' 
                                                 : 'text-hero-sub hover:bg-white/5 hover:text-foreground'
                                             }`}
                                         >
-                                            <span className="material-icons text-lg opacity-40">chat_bubble_outline</span>
+                                            <span className="material-icons text-base md:text-lg opacity-40">chat_bubble_outline</span>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium truncate">{conv.title}</p>
-                                                <p className="text-[10px] opacity-40 uppercase tracking-wider">{formatTime(conv.updatedAt)}</p>
+                                                <p className="text-xs md:text-sm font-medium truncate">{conv.title}</p>
+                                                <p className="text-[8px] md:text-[10px] opacity-40 uppercase tracking-wider">{formatTime(conv.updatedAt)}</p>
                                             </div>
                                             <button
                                                 onClick={(e) => handleDeleteConversation(e, conv.id)}
-                                                className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-500/20 rounded-lg transition-all text-red-400"
+                                                className="opacity-0 group-hover:opacity-100 p-1 md:p-1.5 hover:bg-red-500/20 rounded-lg transition-all text-red-400"
                                             >
-                                                <span className="material-icons text-sm">delete</span>
+                                                <span className="material-icons text-xs md:text-sm">delete</span>
                                             </button>
                                         </button>
                                     ))}
@@ -255,61 +283,71 @@ export default function Chat() {
                             </div>
                         </div>
                     ) : (
-                        <div className="text-center py-12 px-6">
-                            <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/10">
-                                <span className="material-icons text-hero-sub">auto_awesome</span>
+                        <div className="text-center py-8 md:py-12 px-4 md:px-6">
+                            <div className="w-10 h-10 md:w-12 md:h-12 bg-white/5 rounded-xl md:rounded-2xl flex items-center justify-center mx-auto mb-3 md:mb-4 border border-white/10">
+                                <span className="material-icons text-hero-sub text-xl">auto_awesome</span>
                             </div>
-                            <p className="text-xs text-hero-sub leading-relaxed uppercase tracking-widest font-general font-bold">No history found</p>
+                            <p className="text-[9px] md:text-xs text-hero-sub leading-relaxed uppercase tracking-widest font-general font-bold">No history</p>
                         </div>
                     )}
                     </AnimatePresence>
                 </div>
 
                 {/* Sidebar bottom nav */}
-                <div className="p-4 space-y-1 mt-auto">
+                <div className="p-3 md:p-4 space-y-0.5 md:space-y-1 mt-auto">
                     {[
                         { icon: 'chat', label: 'Assistant', to: '/chat' },
                         { icon: 'visibility', label: 'Vision AI', to: '/image' },
                         { icon: 'mic', label: 'Voice Lab', to: '/voice' },
-                        { icon: 'auto_graph', label: 'Upgrade', to: '/pricing' },
                     ].map((item) => (
                         <Link
                             key={item.label}
                             to={item.to}
-                            className={`flex items-center gap-4 px-4 py-3 rounded-2xl text-sm font-medium transition-all ${
+                            onClick={() => {
+                                if (window.innerWidth < 768) setSidebarOpen(false)
+                            }}
+                            className={`flex items-center gap-3 md:gap-4 px-3 md:px-4 py-2.5 md:py-3 rounded-xl md:rounded-2xl text-xs md:text-sm font-medium transition-all ${
                                 window.location.pathname === item.to 
                                 ? 'bg-primary/10 text-primary ring-1 ring-primary/20' 
                                 : 'text-hero-sub hover:bg-white/5 hover:text-foreground'
                             }`}
                         >
-                            <span className="material-icons text-xl">{item.icon}</span>
+                            <span className="material-icons text-lg md:text-xl">{item.icon}</span>
                             {item.label}
                         </Link>
                     ))}
                 </div>
             </aside>
 
+            {/* Mobile Overlay */}
+            {sidebarOpen && (
+                <div 
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 md:hidden"
+                    onClick={() => setSidebarOpen(false)}
+                />
+            )}
+
             {/* Main Chat Area */}
             <div className="flex-1 flex flex-col min-w-0 relative z-10">
                 {/* Top Bar */}
-                <header className="h-20 flex items-center justify-between px-8 bg-background/50 backdrop-blur-md border-b border-white/5">
-                    <div className="flex items-center gap-6">
+                <header className="h-14 md:h-20 flex items-center justify-between px-4 md:px-8 bg-background/50 backdrop-blur-md border-b border-white/5">
+                    <div className="flex items-center gap-2 md:gap-6 overflow-hidden">
                         <button 
                             onClick={() => setSidebarOpen(!sidebarOpen)} 
-                            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                            className="w-8 h-8 md:w-10 md:h-10 shrink-0 flex items-center justify-center rounded-lg md:rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
                         >
-                            <span className="material-icons text-hero-sub">{sidebarOpen ? 'menu_open' : 'menu'}</span>
+                            <span className="material-icons text-hero-sub text-lg md:text-xl">{sidebarOpen ? 'menu_open' : 'menu'}</span>
                         </button>
-                        <div className="flex flex-col">
-                            <span className="text-[10px] font-general font-bold uppercase tracking-[0.2em] text-primary mb-0.5">Active Session</span>
-                            <h2 className="text-sm font-general font-bold text-foreground">
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-[7px] md:text-[10px] font-general font-bold uppercase tracking-[0.2em] text-primary mb-0.5 truncate">Active Session</span>
+                            <h2 className="text-[10px] md:text-sm font-general font-bold text-foreground truncate">
                                 {activeConvId ? conversations.find(c => c.id === activeConvId)?.title || 'Standard Chat' : 'New Interaction'}
                             </h2>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
-                        <div className="hidden md:flex items-center gap-3 bg-white/5 px-4 py-2 rounded-2xl border border-white/10 shadow-inner">
+                    <div className="flex items-center gap-2 md:gap-4 shrink-0">
+                        <div className="hidden lg:flex items-center gap-3 bg-white/5 px-4 py-2 rounded-2xl border border-white/10 shadow-inner">
                             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                             <span className="text-xs font-general font-bold text-foreground uppercase tracking-widest">CALYX 4.0 Pro</span>
                         </div>
@@ -317,46 +355,55 @@ export default function Chat() {
                             <div className="relative">
                                 <button 
                                     onClick={() => setProfileOpen(!profileOpen)}
-                                    className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-2xl border border-white/10 hover:bg-white/10 transition-all active:scale-95"
+                                    className="flex items-center gap-2 md:gap-3 bg-white/5 px-2 md:px-4 py-1.5 md:py-2 rounded-xl md:rounded-2xl border border-white/10 hover:bg-white/10 transition-all active:scale-95"
                                 >
                                     {user.picture ? (
-                                        <img src={user.picture} alt={user.name} className="w-6 h-6 rounded-full ring-2 ring-primary/20" />
+                                        <img src={user.picture} alt={user.name} className="w-4 h-4 md:w-6 md:h-6 rounded-full ring-2 ring-primary/20" />
                                     ) : (
-                                        <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-                                            <span className="material-icons text-[14px] text-primary">person</span>
+                                        <div className="w-4 h-4 md:w-6 md:h-6 rounded-full bg-primary/20 flex items-center justify-center">
+                                            <span className="material-icons text-[10px] md:text-[14px] text-primary">person</span>
                                         </div>
                                     )}
-                                    <span className="text-xs font-general font-bold text-foreground">{user.name.split(' ')[0]}</span>
+                                    <span className="text-[9px] md:text-xs font-general font-bold text-foreground hidden xs:block">{user.name.split(' ')[0]}</span>
                                     <span className="material-icons text-sm text-hero-sub">expand_more</span>
                                 </button>
                                 
                                 <AnimatePresence>
                                     {profileOpen && (
-                                        <motion.div 
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: 10 }}
-                                            className="absolute right-0 mt-3 w-56 liquid-glass rounded-2xl py-3 z-50 border border-white/10 shadow-2xl"
-                                        >
-                                            <div className="px-5 py-2 border-b border-white/5 mb-2">
-                                                <p className="text-[10px] text-hero-sub font-bold uppercase tracking-widest truncate">{user.email}</p>
-                                            </div>
-                                            <button
-                                                onClick={() => {
-                                                    logout()
-                                                    setProfileOpen(false)
-                                                }}
-                                                className="w-full text-left px-5 py-3 text-xs font-general font-bold text-red-400 hover:bg-red-500/10 transition-all flex items-center gap-3"
+                                        <>
+                                            <div 
+                                                className="fixed inset-0 z-[-1]" 
+                                                onClick={() => setProfileOpen(false)}
+                                            />
+                                            <motion.div 
+                                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                className="absolute right-0 mt-3 w-56 md:w-64 liquid-glass rounded-2xl py-3 z-50 border border-white/10 shadow-2xl overflow-hidden"
                                             >
-                                                <span className="material-icons text-lg">logout</span>
-                                                SIGN OUT
-                                            </button>
-                                        </motion.div>
+                                                <div className="px-5 py-3 border-b border-white/5 mb-2">
+                                                    <p className="text-[11px] md:text-sm font-bold text-foreground truncate">{user.name}</p>
+                                                    <p className="text-[9px] md:text-[10px] text-hero-sub truncate opacity-70">{user.email}</p>
+                                                </div>
+                                                <div className="px-2 space-y-1">
+                                                    <button
+                                                        onClick={() => {
+                                                            logout()
+                                                            setProfileOpen(false)
+                                                        }}
+                                                        className="w-full text-left px-4 py-2.5 text-[10px] md:text-xs font-bold uppercase tracking-wider text-red-400 hover:bg-red-500/10 rounded-xl transition-all flex items-center gap-3 group"
+                                                    >
+                                                        <span className="material-icons text-base md:text-lg group-hover:rotate-12 transition-transform">logout</span>
+                                                        SIGN OUT
+                                                    </button>
+                                                </div>
+                                            </motion.div>
+                                        </>
                                     )}
                                 </AnimatePresence>
                             </div>
                         ) : (
-                            <Link to="/signin" className="bg-primary text-white text-[10px] font-general font-bold px-6 py-2.5 rounded-2xl hover:bg-blue-600 transition-all shadow-lg shadow-primary/20 uppercase tracking-widest">
+                            <Link to="/signin" className="bg-primary text-white text-[8px] md:text-[10px] font-general font-bold px-3 md:px-6 py-2 md:py-2.5 rounded-xl md:rounded-2xl hover:bg-blue-600 transition-all shadow-lg shadow-primary/20 uppercase tracking-widest">
                                 Sign In
                             </Link>
                         )}
@@ -364,23 +411,23 @@ export default function Chat() {
                 </header>
 
                 {/* Messages Container */}
-                <div className="flex-1 overflow-y-auto chat-scroll px-6 py-10">
-                    <div className="max-w-4xl mx-auto space-y-10">
+                <div className="flex-1 overflow-y-auto chat-scroll px-3 md:px-6 py-4 md:py-10">
+                    <div className="max-w-4xl mx-auto space-y-4 md:space-y-10">
                         {/* New Chat Empty State */}
                         {messages.length <= 1 && (
                             <motion.div 
                                 initial={{ opacity: 0, y: 20 }} 
                                 animate={{ opacity: 1, y: 0 }} 
-                                className="flex flex-col items-center py-20 text-center"
+                                className="flex flex-col items-center py-8 md:py-20 text-center"
                             >
-                                <div className="relative w-40 h-40 mb-8">
+                                <div className="relative w-24 h-24 md:w-40 md:h-40 mb-6 md:mb-8">
                                     <div className="absolute inset-0 rounded-full bg-primary/20 blur-3xl animate-pulse" />
                                     <motion.div 
                                         animate={{ rotate: 360 }}
                                         transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-                                        className="absolute inset-0 rounded-[40px] liquid-glass flex items-center justify-center border border-white/10"
+                                        className="absolute inset-0 rounded-[24px] md:rounded-[40px] liquid-glass flex items-center justify-center border border-white/10"
                                     >
-                                        <div className="grid grid-cols-3 gap-3 p-4">
+                                        <div className="grid grid-cols-3 gap-1.5 md:gap-3 p-3 md:p-4">
                                             {[...Array(9)].map((_, i) => (
                                                 <motion.div 
                                                     key={i} 
@@ -390,15 +437,15 @@ export default function Chat() {
                                                         borderRadius: ["20%", "50%", "20%"]
                                                     }}
                                                     transition={{ duration: 3, repeat: Infinity, delay: i * 0.2 }}
-                                                    className="w-3 h-3 bg-primary" 
+                                                    className="w-1.5 md:w-3 h-1.5 md:h-3 bg-primary" 
                                                 />
                                             ))}
                                         </div>
                                     </motion.div>
                                 </div>
-                                <h3 className="text-2xl font-general font-bold text-foreground mb-4">Universal Intelligence</h3>
-                                <p className="text-sm font-geist text-hero-sub max-w-sm mx-auto leading-relaxed uppercase tracking-[0.2em] text-[10px]">
-                                    Autonomous engine ready for synchronization.<br/>Deploying CALYX 4.0 core.
+                                <h3 className="text-lg md:text-2xl font-general font-bold text-foreground mb-3">Universal Intelligence</h3>
+                                <p className="text-[8px] md:text-[10px] font-geist text-hero-sub max-w-[240px] md:max-w-sm mx-auto leading-relaxed uppercase tracking-[0.2em]">
+                                    Autonomous engine ready for synchronization.<br className="hidden md:block"/>Deploying CALYX 4.0 core.
                                 </p>
                             </motion.div>
                         )}
@@ -408,38 +455,38 @@ export default function Chat() {
                         {messages.map((msg, i) => (
                             <motion.div 
                                 key={i} 
-                                initial={{ opacity: 0, x: msg.role === 'user' ? 20 : -20 }}
+                                initial={{ opacity: 0, x: msg.role === 'user' ? 10 : -10 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ duration: 0.5, ease: "easeOut" }}
-                                className={`flex gap-6 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+                                className={`flex gap-2 md:gap-6 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
                             >
                                 {/* Avatar */}
-                                <div className="flex-shrink-0 pt-1">
+                                <div className="flex-shrink-0 pt-0.5">
                                     {msg.role === 'assistant' ? (
-                                        <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
-                                            <span className="material-icons text-white text-xl">auto_awesome</span>
+                                        <div className="w-7 h-7 md:w-10 md:h-10 rounded-lg md:rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
+                                            <span className="material-icons text-white text-sm md:text-xl">auto_awesome</span>
                                         </div>
                                     ) : (
-                                        <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
-                                            <span className="material-icons text-hero-sub text-xl">person</span>
+                                        <div className="w-7 h-7 md:w-10 md:h-10 rounded-lg md:rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+                                            <span className="material-icons text-hero-sub text-sm md:text-xl">person</span>
                                         </div>
                                     )}
                                 </div>
 
                                 {/* Bubble */}
-                                <div className={`max-w-[85%] md:max-w-[70%] space-y-2`}>
-                                    <div className={`p-6 rounded-[32px] text-sm leading-relaxed font-geist ${
+                                <div className={`max-w-[90%] md:max-w-[80%] lg:max-w-[70%] space-y-1.5`}>
+                                    <div className={`p-3.5 md:p-6 rounded-[20px] md:rounded-[32px] text-[13px] md:text-sm leading-relaxed font-geist ${
                                         msg.role === 'user'
                                         ? 'bg-primary text-white shadow-2xl shadow-primary/20 rounded-tr-sm'
                                         : 'liquid-glass text-foreground border border-white/5 rounded-tl-sm shadow-xl'
                                     }`}>
                                         {renderContent(msg.content)}
                                     </div>
-                                    <p className={`text-[10px] font-bold uppercase tracking-widest text-hero-sub px-4 ${
+                                    <p className={`text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-hero-sub px-3 ${
                                         msg.role === 'user' ? 'text-right' : 'text-left'
                                     }`}>
-                                        {msg.role === 'assistant' ? 'CALYX Intelligence' : (user?.name || 'Authorized User')}
-                                        <span className="mx-2 opacity-20">/</span>
+                                        {msg.role === 'assistant' ? 'CALYX AI' : (user?.name?.split(' ')[0] || 'User')}
+                                        <span className="mx-1.5 md:mx-2 opacity-20">/</span>
                                         {msg.time}
                                     </p>
                                 </div>
@@ -452,19 +499,19 @@ export default function Chat() {
                             <motion.div 
                                 initial={{ opacity: 0 }} 
                                 animate={{ opacity: 1 }} 
-                                className="flex gap-6"
+                                className="flex gap-2 md:gap-6"
                             >
-                                <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/20">
-                                    <span className="material-icons text-white text-xl">auto_awesome</span>
+                                <div className="w-7 h-7 md:w-10 md:h-10 rounded-lg md:rounded-2xl bg-primary flex items-center justify-center flex-shrink-0">
+                                    <span className="material-icons text-white text-sm md:text-xl">auto_awesome</span>
                                 </div>
-                                <div className="liquid-glass border border-white/5 px-6 py-5 rounded-[24px] rounded-tl-sm shadow-xl">
-                                    <div className="flex gap-2">
+                                <div className="liquid-glass border border-white/5 px-4 md:px-6 py-3 md:py-5 rounded-xl md:rounded-[24px] rounded-tl-sm shadow-xl">
+                                    <div className="flex gap-1 md:gap-2">
                                         {[0, 1, 2].map((dot) => (
                                             <motion.div 
                                                 key={dot}
                                                 animate={{ scale: [1, 1.5, 1], opacity: [0.4, 1, 0.4] }}
                                                 transition={{ duration: 1.5, repeat: Infinity, delay: dot * 0.2 }}
-                                                className="w-2 h-2 rounded-full bg-primary" 
+                                                className="w-1 md:w-2 h-1 md:h-2 rounded-full bg-primary" 
                                             />
                                         ))}
                                     </div>
@@ -476,13 +523,12 @@ export default function Chat() {
                 </div>
 
                 {/* Input Area */}
-                <div className="p-8 bg-gradient-to-t from-background via-background to-transparent">
+                <div className="p-3 md:p-8 bg-gradient-to-t from-background via-background to-transparent">
                     <div className="max-w-4xl mx-auto relative group">
-                        {/* Shadow bloom effect */}
-                        <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-[32px] blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
+                        <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-[20px] md:rounded-[32px] blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
                         
-                        <div className="relative liquid-glass rounded-[32px] border border-white/10 p-2 flex items-center gap-2 shadow-2xl">
-                            <button className="w-12 h-12 flex items-center justify-center rounded-2xl hover:bg-white/5 transition-colors text-hero-sub hover:text-foreground" title="Attachment">
+                        <div className="relative liquid-glass rounded-[18px] md:rounded-[32px] border border-white/10 p-1 md:p-2 flex items-center gap-1 md:gap-2 shadow-2xl">
+                            <button className="hidden sm:flex w-10 md:w-12 h-10 md:h-12 items-center justify-center rounded-xl md:rounded-2xl hover:bg-white/5 transition-colors text-hero-sub hover:text-foreground shrink-0">
                                 <span className="material-icons text-xl">add_circle_outline</span>
                             </button>
                             <textarea
@@ -496,11 +542,11 @@ export default function Chat() {
                                     }
                                 }}
                                 rows={1}
-                                className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-sm text-foreground placeholder-hero-sub py-3 px-2 resize-none font-geist max-h-40"
-                                placeholder="Command CALYX AI..."
+                                className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-[13px] md:text-sm text-foreground placeholder-hero-sub py-2 md:py-3 px-2 md:px-3 resize-none font-geist max-h-40"
+                                placeholder="Message CALYX AI..."
                             />
-                            <div className="flex items-center gap-1 pr-2">
-                                <Link to="/voice" className="w-10 h-10 flex items-center justify-center rounded-2xl hover:bg-white/5 transition-colors text-hero-sub hover:text-foreground">
+                            <div className="flex items-center gap-1 pr-1 md:pr-2 shrink-0">
+                                <Link to="/voice" className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-lg md:rounded-2xl hover:bg-white/5 transition-colors text-hero-sub hover:text-foreground">
                                     <span className="material-icons text-xl">mic_none</span>
                                 </Link>
                                 <motion.button
@@ -508,18 +554,18 @@ export default function Chat() {
                                     whileTap={input.trim() ? { scale: 0.95 } : {}}
                                     onClick={handleSend}
                                     disabled={!input.trim()}
-                                    className={`w-12 h-12 flex items-center justify-center rounded-2xl transition-all ${
+                                    className={`w-8 h-8 md:w-12 md:h-12 flex items-center justify-center rounded-lg md:rounded-2xl transition-all ${
                                         input.trim()
                                         ? 'bg-primary text-white shadow-lg shadow-primary/30'
                                         : 'bg-white/5 text-white/20 cursor-not-allowed'
                                     }`}
                                 >
-                                    <span className="material-icons text-xl">north</span>
+                                    <span className="material-icons text-lg md:text-xl">north</span>
                                 </motion.button>
                             </div>
                         </div>
-                        <p className="text-center text-[10px] font-bold uppercase tracking-[0.2em] text-hero-sub/30 mt-4">
-                            Cryptographically secured communication engine v4.0.2
+                        <p className="text-center text-[6px] md:text-[10px] font-bold uppercase tracking-[0.2em] text-hero-sub/30 mt-2 md:mt-4">
+                            CALYX AI Engine v4.0.2 • Secure Session
                         </p>
                     </div>
                 </div>

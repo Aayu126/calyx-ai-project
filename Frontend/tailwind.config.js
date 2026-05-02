@@ -20,6 +20,9 @@ export default {
                 "geist": ["Geist Sans", "sans-serif"],
                 "general": ["General Sans", "sans-serif"],
             },
+            screens: {
+                "xs": "375px",
+            },
             borderRadius: {
                 DEFAULT: "0.25rem",
                 lg: "0.5rem",

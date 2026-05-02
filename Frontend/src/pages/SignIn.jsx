@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
@@ -8,8 +8,30 @@ export default function SignIn() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
-    const { signIn, signInWithGoogleFrontend, loading } = useAuth()
+    const { signIn, loading, user } = useAuth()
     const navigate = useNavigate()
+
+    useEffect(() => {
+        // If user is already logged in, redirect to chat immediately
+        if (user) {
+            navigate('/chat', { replace: true })
+        }
+    }, [user, navigate])
+
+    if (loading && !user) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="relative w-24 h-24">
+                    <div className="absolute inset-0 bg-primary/20 blur-2xl animate-pulse rounded-full" />
+                    <motion.div 
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                        className="absolute inset-0 border-4 border-primary border-t-transparent rounded-full"
+                    />
+                </div>
+            </div>
+        )
+    }
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -45,10 +67,6 @@ export default function SignIn() {
                             src="/logo.png" 
                             alt="CALYX" 
                             className="w-10 h-10 object-contain group-hover:scale-110 transition-transform duration-300"
-                            onError={(e) => {
-                                e.target.style.display = 'none';
-                                e.target.nextSibling.style.display = 'block';
-                            }}
                         />
                         <span className="font-general font-bold tracking-tighter text-3xl text-foreground">CALYX</span>
                     </Link>
@@ -121,7 +139,7 @@ export default function SignIn() {
                     </div>
 
                     {/* Social Auth */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}

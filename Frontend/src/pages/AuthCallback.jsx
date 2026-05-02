@@ -20,11 +20,18 @@ export default function AuthCallback() {
             return
         }
 
-        const success = handleOAuthCallback(searchParams)
-        if (success) {
-            navigate('/chat', { replace: true })
-        } else {
-            setError('Failed to process authentication. Please try again.')
+        const token = searchParams.get('token')
+        if (token) {
+            const success = handleOAuthCallback(searchParams)
+            if (success) {
+                // Give React a moment to propagate the state change
+                const timeout = setTimeout(() => {
+                    navigate('/chat', { replace: true })
+                }, 100)
+                return () => clearTimeout(timeout)
+            } else {
+                setError('Failed to process authentication. Please try again.')
+            }
         }
     }, [searchParams, handleOAuthCallback, navigate])
 

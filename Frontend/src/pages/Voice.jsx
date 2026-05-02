@@ -146,47 +146,47 @@ export default function Voice() {
     }
 
     return (
-        <main className="relative pt-32 pb-24 min-h-screen overflow-hidden bg-[#050505]">
+        <main className="relative pt-24 md:pt-32 pb-16 md:pb-24 min-h-screen overflow-hidden bg-[#050505]">
             {/* Ambient Orbs */}
-            <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] orb-gradient rounded-full pointer-events-none opacity-[0.15] blur-[100px]" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] orb-gradient rounded-full pointer-events-none opacity-[0.1] blur-[100px]" />
+            <div className="absolute top-[-10%] left-[-10%] w-[300px] md:w-[500px] h-[300px] md:h-[500px] orb-gradient rounded-full pointer-events-none opacity-[0.15] blur-[80px] md:blur-[100px]" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[300px] md:w-[500px] h-[300px] md:h-[500px] orb-gradient rounded-full pointer-events-none opacity-[0.1] blur-[80px] md:blur-[100px]" />
 
             <motion.section 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8 }}
-                className="relative z-10 max-w-5xl mx-auto px-6"
+                className="relative z-10 max-w-5xl mx-auto px-4 md:px-6"
             >
                 {/* Header */}
-                <div className="text-center mb-16">
+                <div className="text-center mb-10 md:mb-16">
                     <motion.div 
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.2 }}
-                        className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full liquid-glass text-primary text-[10px] font-bold tracking-[0.2em] uppercase mb-8"
+                        className="inline-flex items-center gap-2 px-3 py-1 md:px-4 md:py-1.5 rounded-full liquid-glass text-primary text-[9px] md:text-[10px] font-bold tracking-[0.2em] uppercase mb-6 md:mb-8"
                     >
-                        <span className="material-icons text-sm">mic</span>
+                        <span className="material-icons text-xs md:text-sm">mic</span>
                         Neural Voice Engine
                     </motion.div>
-                    <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 font-general">
+                    <h1 className="text-4xl md:text-7xl font-bold tracking-tight mb-4 md:mb-6 font-general">
                         Beyond <span className="text-primary text-glow italic">Words</span>
                     </h1>
-                    <p className="text-lg text-foreground/60 max-w-2xl mx-auto font-geist">
+                    <p className="text-base md:text-lg text-foreground/60 max-w-2xl mx-auto font-geist px-4">
                         Experience lightning-fast transcription and human-like synthesis. 
                         Multilingual, real-time, and powered by advanced neural networks.
                     </p>
                 </div>
 
-                <div className="grid lg:grid-cols-2 gap-10">
+                <div className="grid lg:grid-cols-2 gap-6 md:gap-10">
                     {/* Speech to Text Section */}
                     <motion.div 
                         initial={{ opacity: 0, x: -30 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.4, duration: 0.6 }}
-                        className="liquid-glass rounded-[2.5rem] p-10 border-white/[0.05]"
+                        className="liquid-glass rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 border-white/[0.05]"
                     >
-                        <div className="flex items-center justify-between mb-8">
-                            <h2 className="text-xl font-bold flex items-center gap-3 font-general">
+                        <div className="flex items-center justify-between mb-6 md:mb-8">
+                            <h2 className="text-lg md:text-xl font-bold flex items-center gap-3 font-general">
                                 <span className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                                     <span className="material-icons text-primary text-sm">hearing</span>
                                 </span>
@@ -194,15 +194,15 @@ export default function Voice() {
                             </h2>
                             <div className="flex items-center gap-2">
                                 <div className={`w-2 h-2 rounded-full ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-white/20'}`} />
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/40">
+                                <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-foreground/40">
                                     {isRecording ? 'Live' : 'Standby'}
                                 </span>
                             </div>
                         </div>
 
                         {/* Language Selector */}
-                        <div className="mb-8">
-                            <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-foreground/40 mb-4">
+                        <div className="mb-6 md:mb-8">
+                            <label className="block text-[9px] md:text-[10px] font-bold uppercase tracking-[0.15em] text-foreground/40 mb-4">
                                 Detection Mode
                             </label>
                             <div className="flex flex-wrap gap-2">
@@ -213,7 +213,7 @@ export default function Voice() {
                                             setSelectedLang(lang.code)
                                             setDetectedLang('')
                                         }}
-                                        className={`px-4 py-2 rounded-xl text-xs font-medium transition-all duration-300 border ${
+                                        className={`px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-[10px] md:text-xs font-medium transition-all duration-300 border ${
                                             selectedLang === lang.code
                                                 ? 'bg-primary text-white border-primary shadow-[0_0_20px_rgba(19,127,236,0.3)]'
                                                 : 'bg-white/[0.03] text-foreground/60 border-white/[0.05] hover:border-primary/40 hover:bg-primary/5'
@@ -228,7 +228,7 @@ export default function Voice() {
                                     <motion.p 
                                         initial={{ opacity: 0, y: 5 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        className="text-[11px] text-emerald-400 mt-4 flex items-center gap-2 font-medium"
+                                        className="text-[10px] md:text-[11px] text-emerald-400 mt-4 flex items-center gap-2 font-medium"
                                     >
                                         <span className="material-icons text-xs">auto_awesome</span>
                                         Detected: <span className="uppercase tracking-widest">{detectedLang}</span>
@@ -238,7 +238,7 @@ export default function Voice() {
                         </div>
 
                         {/* Mic Button & Control */}
-                        <div className="flex flex-col items-center mb-10 py-4">
+                        <div className="flex flex-col items-center mb-8 md:mb-10 py-2 md:py-4">
                             <div className="relative group">
                                 <AnimatePresence>
                                     {isRecording && (
@@ -262,18 +262,18 @@ export default function Voice() {
                                 </AnimatePresence>
                                 <button
                                     onClick={toggleRecording}
-                                    className={`relative w-24 h-24 rounded-full flex items-center justify-center transition-all duration-500 z-10 ${
+                                    className={`relative w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center transition-all duration-500 z-10 ${
                                         isRecording
                                         ? 'bg-red-500 shadow-[0_0_40px_rgba(239,68,68,0.4)] scale-110'
                                         : 'bg-primary shadow-[0_0_30px_rgba(19,127,236,0.3)] hover:scale-105 active:scale-95'
                                     }`}
                                 >
-                                    <span className="material-icons text-white text-4xl">
+                                    <span className="material-icons text-white text-3xl md:text-4xl">
                                         {isRecording ? 'stop' : 'mic'}
                                     </span>
                                 </button>
                             </div>
-                            <p className="text-sm text-foreground/40 mt-8 font-geist">
+                            <p className="text-xs md:text-sm text-foreground/40 mt-6 md:mt-8 font-geist text-center">
                                 {isRecording ? 'Capturing audio stream...' : 'Click to start neural transcription'}
                             </p>
                         </div>
@@ -281,9 +281,9 @@ export default function Voice() {
                         {/* Transcription Box */}
                         <div className="relative group">
                             <div className="absolute inset-0 bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl" />
-                            <div className="relative min-h-[160px] bg-white/[0.02] rounded-[1.5rem] p-6 border border-white/[0.08] font-geist">
+                            <div className="relative min-h-[140px] md:min-h-[160px] bg-white/[0.02] rounded-[1.25rem] md:rounded-[1.5rem] p-5 md:p-6 border border-white/[0.08] font-geist">
                                 {(transcript || interimText) ? (
-                                    <div className="text-base leading-relaxed text-foreground/90">
+                                    <div className="text-sm md:text-base leading-relaxed text-foreground/90">
                                         {transcript}
                                         {interimText && (
                                             <span className="text-primary/60 italic ml-1 transition-opacity duration-300">
@@ -292,8 +292,8 @@ export default function Voice() {
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="flex flex-col items-center justify-center h-full text-foreground/20 italic text-sm text-center">
-                                        <span className="material-icons text-3xl mb-3 opacity-20">notes</span>
+                                    <div className="flex flex-col items-center justify-center h-full text-foreground/20 italic text-sm text-center py-4">
+                                        <span className="material-icons text-2xl md:text-3xl mb-3 opacity-20">notes</span>
                                         {isRecording ? 'Processing voice signals...' : 'Your transcription will emerge here'}
                                     </div>
                                 )}
@@ -301,17 +301,17 @@ export default function Voice() {
                         </div>
 
                         {transcript && (
-                            <div className="flex gap-4 mt-6">
+                            <div className="flex gap-3 md:gap-4 mt-5 md:mt-6">
                                 <button
                                     onClick={() => navigator.clipboard.writeText(transcript)}
-                                    className="flex-1 bg-white/5 hover:bg-white/10 text-xs font-bold uppercase tracking-widest py-4 rounded-xl transition-all flex items-center justify-center gap-2 border border-white/[0.05]"
+                                    className="flex-1 bg-white/5 hover:bg-white/10 text-[10px] md:text-xs font-bold uppercase tracking-widest py-3.5 md:py-4 rounded-xl transition-all flex items-center justify-center gap-2 border border-white/[0.05]"
                                 >
                                     <span className="material-icons text-sm">content_copy</span>
                                     Copy
                                 </button>
                                 <button
                                     onClick={() => setTranscript('')}
-                                    className="px-6 bg-white/5 hover:bg-red-500/10 hover:text-red-400 text-xs font-bold uppercase tracking-widest rounded-xl transition-all border border-white/[0.05]"
+                                    className="px-5 md:px-6 bg-white/5 hover:bg-red-500/10 hover:text-red-400 text-[10px] md:text-xs font-bold uppercase tracking-widest rounded-xl transition-all border border-white/[0.05]"
                                 >
                                     Clear
                                 </button>
@@ -324,22 +324,22 @@ export default function Voice() {
                         initial={{ opacity: 0, x: 30 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.6, duration: 0.6 }}
-                        className="liquid-glass rounded-[2.5rem] p-10 border-white/[0.05]"
+                        className="liquid-glass rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 border-white/[0.05]"
                     >
-                        <h2 className="text-xl font-bold mb-8 flex items-center gap-3 font-general">
+                        <h2 className="text-lg md:text-xl font-bold mb-6 md:mb-8 flex items-center gap-3 font-general">
                             <span className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                                 <span className="material-icons text-primary text-sm">record_voice_over</span>
                             </span>
                             Neural Synthesis
                         </h2>
 
-                        <div className="relative group mb-6">
+                        <div className="relative group mb-5 md:mb-6">
                             <div className="absolute inset-0 bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl" />
                             <textarea
                                 value={ttsText}
                                 onChange={(e) => setTtsText(e.target.value)}
                                 placeholder="Enter text for high-fidelity synthesis..."
-                                className="relative w-full bg-white/[0.02] border border-white/[0.08] rounded-[1.5rem] p-6 focus:ring-2 focus:ring-primary/20 focus:border-primary/30 focus:outline-none resize-none text-base placeholder-foreground/20 text-foreground/90 min-h-[220px] font-geist"
+                                className="relative w-full bg-white/[0.02] border border-white/[0.08] rounded-[1.25rem] md:rounded-[1.5rem] p-5 md:p-6 focus:ring-2 focus:ring-primary/20 focus:border-primary/30 focus:outline-none resize-none text-sm md:text-base placeholder-foreground/20 text-foreground/90 min-h-[180px] md:min-h-[220px] font-geist"
                             />
                         </div>
 
@@ -350,18 +350,18 @@ export default function Voice() {
                                     initial={{ opacity: 0, height: 0 }}
                                     animate={{ opacity: 1, height: 'auto' }}
                                     exit={{ opacity: 0, height: 0 }}
-                                    className="mb-6 overflow-hidden"
+                                    className="mb-5 md:mb-6 overflow-hidden"
                                 >
-                                    <div className="bg-primary/5 rounded-[1.5rem] p-6 border border-primary/10 flex items-center gap-6">
-                                        <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center shadow-[0_0_20px_rgba(19,127,236,0.3)]">
-                                            <span className="material-icons text-white">graphic_eq</span>
+                                    <div className="bg-primary/5 rounded-[1.25rem] md:rounded-[1.5rem] p-4 md:p-6 border border-primary/10 flex items-center gap-4 md:gap-6">
+                                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary flex items-center justify-center shadow-[0_0_20px_rgba(19,127,236,0.3)] shrink-0">
+                                            <span className="material-icons text-white text-xl">graphic_eq</span>
                                         </div>
-                                        <div className="flex-1 flex items-center gap-1 h-10">
-                                            {[...Array(24)].map((_, i) => (
+                                        <div className="flex-1 flex items-center gap-0.5 md:gap-1 h-8 md:h-10">
+                                            {[...Array(window.innerWidth < 768 ? 16 : 24)].map((_, i) => (
                                                 <motion.div
                                                     key={i}
                                                     animate={{ 
-                                                        height: [8, 24, 12, 32, 16],
+                                                        height: [6, 20, 10, 28, 14],
                                                         opacity: [0.3, 0.6, 0.3]
                                                     }}
                                                     transition={{ 
@@ -373,7 +373,7 @@ export default function Voice() {
                                                 />
                                             ))}
                                         </div>
-                                        <span className="text-[10px] font-mono text-primary font-bold">LIVE</span>
+                                        <span className="text-[9px] md:text-[10px] font-mono text-primary font-bold">LIVE</span>
                                     </div>
                                 </motion.div>
                             )}
@@ -382,9 +382,9 @@ export default function Voice() {
                         <button
                             onClick={handleTTS}
                             disabled={!ttsText.trim() || playing}
-                            className={`w-full py-5 rounded-[1.5rem] text-xs font-bold uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-center gap-3 ${
+                            className={`w-full py-4 md:py-5 rounded-[1.25rem] md:rounded-[1.5rem] text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-center gap-3 ${
                                 ttsText.trim() && !playing
-                                ? 'bg-primary text-white shadow-[0_0_30px_rgba(19,127,236,0.2)] hover:shadow-[0_0_50px_rgba(19,127,236,0.4)] hover:-translate-y-1'
+                                ? 'bg-primary text-white shadow-[0_0_30px_rgba(19,127,236,0.2)] hover:shadow-[0_0_50px_rgba(19,127,236,0.4)] md:hover:-translate-y-1'
                                 : 'bg-white/[0.03] text-foreground/20 border border-white/[0.05] cursor-not-allowed'
                             }`}
                         >
@@ -399,17 +399,17 @@ export default function Voice() {
                                 </>
                             ) : (
                                 <>
-                                    <span className="material-icons text-xl">play_circle</span>
+                                    <span className="material-icons text-lg md:text-xl">play_circle</span>
                                     Synthesize Speech
                                 </>
                             )}
                         </button>
 
-                        <div className="mt-10">
-                            <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-foreground/40 mb-4">Core Voice Models</p>
+                        <div className="mt-8 md:mt-10">
+                            <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-[0.15em] text-foreground/40 mb-4">Core Voice Models</p>
                             <div className="flex flex-wrap gap-2">
                                 {['English', 'Spanish', 'French', 'German', 'Hindi', 'Marathi', 'Japanese'].map((lang) => (
-                                    <span key={lang} className="px-3 py-1.5 bg-white/[0.03] border border-white/[0.05] rounded-lg text-[10px] font-bold text-foreground/60 uppercase tracking-widest">{lang}</span>
+                                    <span key={lang} className="px-2.5 py-1.5 md:px-3 md:py-1.5 bg-white/[0.03] border border-white/[0.05] rounded-lg text-[9px] md:text-[10px] font-bold text-foreground/60 uppercase tracking-widest">{lang}</span>
                                 ))}
                             </div>
                         </div>

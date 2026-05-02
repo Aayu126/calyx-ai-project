@@ -5,29 +5,42 @@ const AuthContext = createContext(null)
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null)
     const [token, setToken] = useState(localStorage.getItem('calyx_token'))
-    const [loading, setLoading] = useState(false)
+    const [loading, setLoading] = useState(true) // Start with loading true to check token
+
+    const API_URL = import.meta.env.VITE_API_URL || 'https://calyx-ai-backend-wl72.onrender.com/api'
 
     useEffect(() => {
         if (token) {
             localStorage.setItem('calyx_token', token)
-            // Decode JWT payload to get user info
+            // Decode JWT payload to get user info safely
             try {
-                const payload = JSON.parse(atob(token.split('.')[1]))
-                setUser({ id: payload.sub, name: payload.name, email: payload.email, picture: payload.picture })
-
-            } catch {
-                // Invalid token
+                const base64Url = token.split('.')[1]
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+                }).join(''))
+                
+                const payload = JSON.parse(jsonPayload)
+                setUser({ 
+                    id: payload.sub, 
+                    name: payload.name, 
+                    email: payload.email, 
+                    picture: payload.picture 
+                })
+            } catch (e) {
+                console.error('Token decode failed:', e)
+                logout() // Clear invalid token
             }
         } else {
             localStorage.removeItem('calyx_token')
             setUser(null)
         }
+        setLoading(false)
     }, [token])
 
     const signIn = async (email, password) => {
         setLoading(true)
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
             const res = await fetch(`${API_URL}/auth/signin`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -35,7 +48,7 @@ export function AuthProvider({ children }) {
             })
             const data = await res.json()
             if (res.ok) {
-                setUser(data.user)
+                // Set token first, the useEffect will handle setUser
                 setToken(data.token)
                 return { success: true }
             }
@@ -50,7 +63,6 @@ export function AuthProvider({ children }) {
     const signUp = async (name, email, password) => {
         setLoading(true)
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
             const res = await fetch(`${API_URL}/auth/signup`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -58,7 +70,6 @@ export function AuthProvider({ children }) {
             })
             const data = await res.json()
             if (res.ok) {
-                setUser(data.user)
                 setToken(data.token)
                 return { success: true }
             }
@@ -72,12 +83,17 @@ export function AuthProvider({ children }) {
 
     /** Handle OAuth redirect callback — reads token from URL params */
     const handleOAuthCallback = (searchParams) => {
+        setLoading(true) // Ensure loading is true while we process the callback
         const tkn = searchParams.get('token')
         const name = searchParams.get('name')
         const email = searchParams.get('email')
         const picture = searchParams.get('picture')
+        
         if (tkn) {
-            setToken(tkn)
+            // Set token and localStorage immediately
+            localStorage.setItem('calyx_token', tkn)
+            
+            // Explicitly set user details immediately from params to avoid flicker
             if (name && email) {
                 setUser({ 
                     name: decodeURIComponent(name), 
@@ -85,16 +101,18 @@ export function AuthProvider({ children }) {
                     picture: picture ? decodeURIComponent(picture) : null 
                 })
             }
+            
+            // Finally set token state which will also trigger the decoder useEffect (safe)
+            setToken(tkn)
             return true
         }
+        setLoading(false) // Reset loading if no token found
         return false
     }
-
 
     const signInWithGoogleFrontend = async (userInfo) => {
         setLoading(true)
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
             const res = await fetch(`${API_URL}/auth/google/frontend`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -102,7 +120,6 @@ export function AuthProvider({ children }) {
             })
             const data = await res.json()
             if (res.ok) {
-                setUser(data.user)
                 setToken(data.token)
                 return { success: true }
             }

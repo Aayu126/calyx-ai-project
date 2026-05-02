@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
@@ -10,8 +10,14 @@ export default function SignUp() {
     const [password, setPassword] = useState('')
     const [agreed, setAgreed] = useState(false)
     const [error, setError] = useState('')
-    const { signUp, loading } = useAuth()
+    const { signUp, loading, user } = useAuth()
     const navigate = useNavigate()
+
+    useEffect(() => {
+        if (user) {
+            navigate('/chat', { replace: true })
+        }
+    }, [user, navigate])
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -29,11 +35,13 @@ export default function SignUp() {
     }
 
     const handleGoogleLogin = () => {
-        window.location.href = getGoogleAuthUrl()
+        const origin = window.location.origin
+        window.location.href = getGoogleAuthUrl(origin)
     }
 
     const handleGitHubLogin = () => {
-        window.location.href = getGitHubAuthUrl()
+        const origin = window.location.origin
+        window.location.href = getGitHubAuthUrl(origin)
     }
 
     return (
@@ -147,7 +155,7 @@ export default function SignUp() {
                     </div>
 
                     {/* Social Auth */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}

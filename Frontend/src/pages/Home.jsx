@@ -88,17 +88,17 @@ export default function Home() {
                     transition={{ duration: 0.8, ease: "easeOut" }}
                     className="text-center"
                 >
-                    <h1 className="text-[120px] md:text-[220px] font-normal leading-[1.02] tracking-[-0.024em] font-general mb-2">
+                    <h1 className="text-[80px] xs:text-[120px] md:text-[220px] font-normal leading-[1.02] tracking-[-0.024em] font-general mb-2">
                         CALYX <span className="bg-clip-text text-transparent bg-gradient-to-l from-[#6366f1] via-[#a855f7] to-[#fcd34d]">AI</span>
                     </h1>
                     
-                    <p className="text-hero-sub text-lg md:text-xl leading-8 max-w-md mx-auto opacity-80 mt-[9px]">
+                    <p className="text-hero-sub text-base md:text-xl leading-8 max-w-md mx-auto opacity-80 mt-[9px]">
                         The most powerful AI ever deployed <br className="hidden md:block" /> in talent acquisition
                     </p>
 
                     <Link 
                         to="/signup" 
-                        className="btn-hero-secondary px-[29px] py-[24px] mt-[25px] inline-block text-lg"
+                        className="btn-hero-secondary px-[20px] xs:px-[29px] py-[16px] xs:py-[24px] mt-[25px] inline-block text-base xs:text-lg"
                     >
                         Get Started
                     </Link>
@@ -114,7 +114,7 @@ export default function Home() {
 
                     <div className="flex-1 overflow-hidden relative mask-fade-edges">
                         <motion.div 
-                            className="flex items-center gap-16 w-max"
+                            className="flex items-center gap-10 md:gap-16 w-max"
                             animate={{ x: [0, -1000] }}
                             transition={{ 
                                 duration: 25, 

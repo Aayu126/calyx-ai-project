@@ -32,6 +32,7 @@ sys.path.insert(0, BACKEND_DIR)
 
 from flask import Flask, request, jsonify, Response, redirect
 from flask_cors import CORS
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 import jwt
 import bcrypt
@@ -77,22 +78,19 @@ except Exception as e:
 
 # ── Flask App Setup ───────────────────────────────────────────
 app = Flask(__name__)
+# Support HTTPS when behind Render proxy
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
 CORS(app, origins=[
-    # Local development — all Vite dev ports
     "http://localhost:5173", 
     "http://127.0.0.1:5173",
     "http://localhost:5174",
     "http://localhost:5175",
-    "http://localhost:5176",
-    "http://localhost:5177",
-    "http://localhost:5178",
-    "http://localhost:5179",
-    "http://localhost:5180",
-    "http://localhost:5181",
-    "http://localhost:5182",
-    # Production — Vercel frontend (update this after deploying)
-    os.environ.get("FRONTEND_URL", "http://localhost:5173"),
-])
+    "http://localhost:3000",
+    # Production
+    "https://calyx-ai-project.vercel.app",
+    os.environ.get("FRONTEND_URL", "https://calyx-ai-project.vercel.app"),
+], supports_credentials=True)
 
 # Secret key for JWT signing
 JWT_SECRET = os.environ.get("JWT_SECRET", secrets.token_hex(32))
@@ -103,7 +101,7 @@ GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
 GITHUB_CLIENT_ID = os.environ.get("GITHUB_CLIENT_ID", "")
 GITHUB_CLIENT_SECRET = os.environ.get("GITHUB_CLIENT_SECRET", "")
-FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://calyx-ai-project.vercel.app")
 
 # Ensure directories exist
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -322,7 +320,10 @@ def chat():
 
     except Exception as e:
         print(f"Chat error: {e}")
-        return jsonify({"reply": f"An error occurred: {str(e)}"}), 500
+        error_msg = str(e)
+        if "api_key" in error_msg.lower() or "none" in error_msg.lower():
+            error_msg = "The AI service (Groq) is not configured correctly on the server. Please check the GroqAPIKey environment variable."
+        return jsonify({"reply": f"An error occurred: {error_msg}"}), 500
 
 
 # ── Conversations ─────────────────────────────────────────────
@@ -472,11 +473,43 @@ def voice_tts():
 # ── Voice: Transcribe (stub) ─────────────────────────────────
 
 @app.route("/api/voice/transcribe", methods=["POST"])
+@auth_required
 def voice_transcribe():
-    return jsonify({
-        "text": "",
-        "message": "Server-side transcription not configured. Use browser speech recognition."
-    })
+    if 'audio' not in request.files:
+        return jsonify({"error": "No audio file provided"}), 400
+    
+    audio_file = request.files['audio']
+    if not audio_file.filename:
+        return jsonify({"error": "No audio file selected"}), 400
+
+    groq_key = os.environ.get("GroqAPIKey")
+    if not groq_key:
+        return jsonify({"error": "Transcription service (Groq) not configured on server"}), 503
+
+    try:
+        from groq import Groq
+        client = Groq(api_key=groq_key)
+        
+        # Save temporary file
+        temp_path = os.path.join(DATA_DIR, f"temp_{uuid.uuid4()}.webm")
+        audio_file.save(temp_path)
+        
+        try:
+            with open(temp_path, "rb") as file:
+                transcription = client.audio.transcriptions.create(
+                    file=(temp_path, file.read()),
+                    model="whisper-large-v3",
+                    response_format="json",
+                )
+            
+            return jsonify({"text": transcription.get("text", "")})
+        finally:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+                
+    except Exception as e:
+        print(f"Transcription error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 # ── Auth: Sign In ─────────────────────────────────────────────
@@ -559,7 +592,12 @@ def auth_google():
     frontend_origin = request.args.get("frontend_origin", FRONTEND_URL)
     state = urllib.parse.quote(frontend_origin, safe="")
 
-    redirect_uri = f"{request.host_url}api/auth/google/callback"
+    # Ensure redirect_uri uses https in production
+    base_url = request.host_url.rstrip('/')
+    if "onrender.com" in base_url and not base_url.startswith("https"):
+        base_url = base_url.replace("http://", "https://")
+    
+    redirect_uri = f"{base_url}/api/auth/google/callback"
     google_auth_url = (
         f"https://accounts.google.com/o/oauth2/v2/auth?"
         f"client_id={GOOGLE_CLIENT_ID}&"
@@ -580,12 +618,20 @@ def auth_google_callback():
     code = request.args.get("code")
     # Recover the frontend origin from the state parameter
     state = request.args.get("state", "")
-    frontend_origin = urllib.parse.unquote(state) if state else FRONTEND_URL
+    try:
+        frontend_origin = urllib.parse.unquote(state) if state else FRONTEND_URL
+    except:
+        frontend_origin = FRONTEND_URL
 
     if not code:
         return redirect(f"{frontend_origin}/signin?error=no_code")
 
-    redirect_uri = f"{request.host_url}api/auth/google/callback"
+    # Ensure redirect_uri matches what was sent to Google
+    base_url = request.host_url.rstrip('/')
+    if "onrender.com" in base_url and not base_url.startswith("https"):
+        base_url = base_url.replace("http://", "https://")
+        
+    redirect_uri = f"{base_url}/api/auth/google/callback"
 
     # Exchange code for tokens
     try:

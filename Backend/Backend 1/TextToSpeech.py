@@ -1,4 +1,8 @@
-import pygame
+try:
+    import pygame
+    PYGAME_AVAILABLE = True
+except ImportError:
+    PYGAME_AVAILABLE = False
 import random
 import asyncio
 import edge_tts
@@ -111,6 +115,10 @@ def TTS(Text, func=lambda r=None: True):
     while True:
         try:
             asyncio.run(TextToAudioFile(str(Text)))
+            
+            if not PYGAME_AVAILABLE:
+                print("Pygame not available. Playback skipped.")
+                return False
 
             pygame.mixer.init()
             pygame.mixer.music.load(_SPEECH_PATH)
@@ -129,8 +137,9 @@ def TTS(Text, func=lambda r=None: True):
         finally:
             try:
                 func(False)
-                pygame.mixer.music.stop()
-                pygame.mixer.quit()
+                if PYGAME_AVAILABLE:
+                    pygame.mixer.music.stop()
+                    pygame.mixer.quit()
             except Exception as e:
                 print(f"Error in finally block: {e}")
 

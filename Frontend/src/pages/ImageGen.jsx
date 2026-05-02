@@ -87,7 +87,7 @@ export default function ImageGen() {
                         y: [0, 30, 0]
                     }}
                     transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-                    className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-primary/10 rounded-full blur-[120px]"
+                    className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-primary/10 rounded-full blur-[80px] md:blur-[120px]"
                 />
                 <motion.div 
                     animate={{ 
@@ -96,7 +96,7 @@ export default function ImageGen() {
                         y: [0, -20, 0]
                     }}
                     transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                    className="absolute -bottom-[10%] -right-[10%] w-[60%] h-[60%] bg-purple-600/10 rounded-full blur-[150px]"
+                    className="absolute -bottom-[10%] -right-[10%] w-[60%] h-[60%] bg-purple-600/10 rounded-full blur-[100px] md:blur-[150px]"
                 />
             </div>
 
@@ -107,9 +107,9 @@ export default function ImageGen() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setShowHistory(!showHistory)}
-                className="fixed left-8 bottom-8 z-50 p-5 liquid-glass rounded-[24px] border border-white/10 hover:border-primary/40 transition-all group shadow-2xl"
+                className="fixed left-4 bottom-4 md:left-8 md:bottom-8 z-50 p-4 md:p-5 liquid-glass rounded-2xl md:rounded-[24px] border border-white/10 hover:border-primary/40 transition-all group shadow-2xl"
             >
-                <span className="material-icons text-hero-sub group-hover:text-primary transition-colors text-2xl">grid_view</span>
+                <span className="material-icons text-hero-sub group-hover:text-primary transition-colors text-xl md:text-2xl">grid_view</span>
             </motion.button>
 
             {/* History Sidebar */}
@@ -120,21 +120,21 @@ export default function ImageGen() {
                         animate={{ x: 0, opacity: 1 }}
                         exit={{ x: -400, opacity: 0 }}
                         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                        className="w-[420px] border-r border-white/5 bg-black/40 backdrop-blur-[40px] p-10 overflow-y-auto z-40 relative"
+                        className="fixed inset-y-0 left-0 w-full sm:w-[420px] border-r border-white/5 bg-black/40 backdrop-blur-[40px] p-6 md:p-10 overflow-y-auto z-40 relative"
                     >
-                        <div className="flex items-center justify-between mb-12">
+                        <div className="flex items-center justify-between mb-8 md:mb-12">
                             <div>
-                                <h2 className="text-3xl font-general font-bold tracking-tight text-foreground flex items-center gap-3">
+                                <h2 className="text-2xl md:text-3xl font-general font-bold tracking-tight text-foreground flex items-center gap-3">
                                     Vision Gallery
                                 </h2>
-                                <p className="text-[10px] text-primary font-black tracking-[0.3em] uppercase mt-2">Neural Archive</p>
+                                <p className="text-[9px] md:text-[10px] text-primary font-black tracking-[0.3em] uppercase mt-2">Neural Archive</p>
                             </div>
                             <button onClick={() => setShowHistory(false)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-hero-sub hover:text-white transition-all">
                                 <span className="material-icons text-xl">close</span>
                             </button>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-5">
+                        <div className="grid grid-cols-2 gap-4 md:gap-5">
                             {history.length > 0 ? history.map((item, i) => (
                                 <motion.div 
                                     key={i}
@@ -142,20 +142,23 @@ export default function ImageGen() {
                                     animate={{ opacity: 1, scale: 1 }}
                                     transition={{ delay: i * 0.05 }}
                                     whileHover={{ y: -8, scale: 1.02 }}
-                                    className="group relative aspect-square rounded-[24px] overflow-hidden cursor-pointer border border-white/5 hover:border-primary/40 transition-all bg-white/5 shadow-xl"
-                                    onClick={() => setImages([item])}
+                                    className="group relative aspect-square rounded-2xl md:rounded-[24px] overflow-hidden cursor-pointer border border-white/5 hover:border-primary/40 transition-all bg-white/5 shadow-xl"
+                                    onClick={() => {
+                                        setImages([item]);
+                                        if (window.innerWidth < 640) setShowHistory(false);
+                                    }}
                                 >
                                     <img src={item.url} alt={item.prompt} className="w-full h-full object-cover group-hover:scale-110 transition-all duration-1000" />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-4">
-                                        <p className="text-[10px] text-white font-geist line-clamp-2 leading-tight font-medium">{item.prompt}</p>
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-3 md:p-4">
+                                        <p className="text-[9px] md:text-[10px] text-white font-geist line-clamp-2 leading-tight font-medium">{item.prompt}</p>
                                     </div>
                                 </motion.div>
                             )) : (
-                                <div className="col-span-2 text-center py-40">
-                                    <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
-                                        <span className="material-icons text-4xl text-white/10">collections_bookmark</span>
+                                <div className="col-span-2 text-center py-32 md:py-40">
+                                    <div className="w-16 h-16 md:w-20 md:h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
+                                        <span className="material-icons text-3xl md:text-4xl text-white/10">collections_bookmark</span>
                                     </div>
-                                    <p className="text-sm font-black tracking-widest uppercase text-white/20">Archive Empty</p>
+                                    <p className="text-xs md:text-sm font-black tracking-widest uppercase text-white/20">Archive Empty</p>
                                 </div>
                             )}
                         </div>
@@ -179,13 +182,13 @@ export default function ImageGen() {
                             <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
                             <span className="text-[10px] font-black tracking-[0.3em] text-primary uppercase">Generative Vision Active</span>
                         </motion.div>
-                        <h1 className="text-6xl md:text-8xl font-general font-bold mb-6 tracking-tight leading-[0.9]">
+                        <h1 className="text-4xl md:text-8xl font-general font-bold mb-6 tracking-tight leading-[0.9]">
                             From thought <br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-400 to-purple-500 italic">
                                 to masterpiece
                             </span>
                         </h1>
-                        <p className="text-xl text-hero-sub font-geist max-w-2xl mx-auto leading-relaxed">
+                        <p className="text-lg md:text-xl text-hero-sub font-geist max-w-2xl mx-auto leading-relaxed px-4">
                             Calyx neural engine transforms your descriptions into high-fidelity visual structures in real-time.
                         </p>
                     </motion.header>
@@ -195,18 +198,18 @@ export default function ImageGen() {
                         initial={{ opacity: 0, y: 50 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2, duration: 0.8 }}
-                        className="relative group mb-24"
+                        className="relative group mb-16 md:mb-24"
                     >
-                        <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-purple-500/20 to-primary/20 rounded-[40px] blur-xl opacity-0 group-hover:opacity-100 transition duration-1000" />
-                        <div className="relative liquid-glass rounded-[40px] border border-white/10 p-10 shadow-3xl">
+                        <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-purple-500/20 to-primary/20 rounded-[32px] md:rounded-[40px] blur-xl opacity-0 group-hover:opacity-100 transition duration-1000" />
+                        <div className="relative liquid-glass rounded-[32px] md:rounded-[40px] border border-white/10 p-6 md:p-12 shadow-3xl">
                             <textarea
                                 value={prompt}
                                 onChange={(e) => setPrompt(e.target.value)}
                                 placeholder="Describe your vision in detail..."
-                                className="w-full bg-transparent border-none text-2xl md:text-3xl font-general font-medium text-foreground placeholder-white/10 focus:ring-0 resize-none min-h-[140px] mb-10 scrollbar-hide"
+                                className="w-full bg-transparent border-none text-xl md:text-3xl font-general font-medium text-foreground placeholder-white/10 focus:ring-0 resize-none min-h-[120px] md:min-h-[140px] mb-6 md:mb-10 scrollbar-hide"
                             />
                             
-                            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 pt-10 border-t border-white/5">
+                            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 pt-6 md:pt-10 border-t border-white/5">
                                 <div className="flex flex-col gap-4">
                                     <label className="text-[10px] font-black text-hero-sub tracking-[0.3em] uppercase ml-1">Aesthetic Signature</label>
                                     <div className="flex flex-wrap gap-2.5">
@@ -312,21 +315,21 @@ export default function ImageGen() {
                                             alt={images[0].prompt} 
                                             className="w-full h-auto max-h-[85vh] object-contain transition-transform duration-700 group-hover:scale-[1.02]"
                                         />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-700 flex flex-col justify-end p-12 md:p-16">
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-700 flex flex-col justify-end p-6 md:p-16">
                                             <div className="flex flex-col md:flex-row items-end md:items-center justify-between gap-8 translate-y-4 group-hover:translate-y-0 transition-transform duration-700">
                                                 <div className="flex-1">
-                                                    <p className="text-white font-general font-bold text-3xl md:text-4xl leading-tight mb-6 tracking-tight">"{images[0].prompt}"</p>
+                                                    <p className="text-white font-general font-bold text-xl md:text-4xl leading-tight mb-4 md:mb-6 tracking-tight">"{images[0].prompt}"</p>
                                                     <div className="flex gap-3">
                                                         <span className="px-5 py-2 bg-white/10 backdrop-blur-2xl rounded-full text-[10px] font-black uppercase tracking-[0.2em] border border-white/10 text-white">{style}</span>
                                                         <span className="px-5 py-2 bg-white/10 backdrop-blur-2xl rounded-full text-[10px] font-black uppercase tracking-[0.2em] border border-white/10 text-white">{size}</span>
                                                     </div>
                                                 </div>
-                                                <div className="flex gap-5">
+                                                <div className="flex gap-3 md:gap-5">
                                                     <motion.button 
                                                         whileHover={{ scale: 1.1, y: -5 }}
                                                         whileTap={{ scale: 0.9 }}
                                                         onClick={() => handleDownload(images[0].url, images[0].prompt)}
-                                                        className="w-20 h-20 bg-primary text-white rounded-[28px] flex items-center justify-center shadow-2xl hover:bg-blue-600 transition-all"
+                                                        className="w-14 h-14 md:w-20 md:h-20 bg-primary text-white rounded-[20px] md:rounded-[28px] flex items-center justify-center shadow-2xl hover:bg-blue-600 transition-all"
                                                     >
                                                         <span className="material-icons text-3xl">download</span>
                                                     </motion.button>
@@ -334,7 +337,7 @@ export default function ImageGen() {
                                                         whileHover={{ scale: 1.1, y: -5 }}
                                                         whileTap={{ scale: 0.9 }}
                                                         onClick={() => window.open(images[0].url, '_blank')}
-                                                        className="w-20 h-20 bg-white/5 backdrop-blur-3xl border border-white/10 text-white rounded-[28px] flex items-center justify-center hover:bg-white/10 transition-all shadow-2xl"
+                                                        className="w-14 h-14 md:w-20 md:h-20 bg-white/5 backdrop-blur-3xl border border-white/10 text-white rounded-[20px] md:rounded-[28px] flex items-center justify-center hover:bg-white/10 transition-all shadow-2xl"
                                                     >
                                                         <span className="material-icons text-3xl">fullscreen</span>
                                                     </motion.button>

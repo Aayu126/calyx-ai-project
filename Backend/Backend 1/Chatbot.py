@@ -25,6 +25,9 @@ if GroqAPIKey:
 else:
     print("[WARNING] GroqAPIKey is missing. Chatbot will not function properly.")
 
+def is_client_active():
+    return client is not None
+
 
 # Ensure data directory exists
 os.makedirs(_DATA_DIR, exist_ok=True)
@@ -147,6 +150,9 @@ def AnswerModifier(Answer):
 
 def ChatBot(Query, history=None):
     """Smart chatbot that automatically searches the web when needed."""
+    if not is_client_active():
+        return "The AI service (Groq) is not configured correctly on the server. Please ensure the GroqAPIKey environment variable is set."
+
     try:
         if history is not None:
             # We don't want to mutate the original list prematurely,

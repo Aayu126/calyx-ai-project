@@ -11,6 +11,8 @@ import SignIn from './pages/SignIn'
 import SignUp from './pages/SignUp'
 import AuthCallback from './pages/AuthCallback'
 
+import ProtectedRoute from './components/ProtectedRoute'
+
 
 function App() {
     return (
@@ -18,7 +20,11 @@ function App() {
             <div className="min-h-screen flex flex-col">
                 <Routes>
                     {/* Chat page has its own layout */}
-                    <Route path="/chat" element={<Chat />} />
+                    <Route path="/chat" element={
+                        <ProtectedRoute>
+                            <Chat />
+                        </ProtectedRoute>
+                    } />
 
                     {/* All other pages share Navbar + Footer */}
                     <Route path="*" element={
@@ -27,8 +33,16 @@ function App() {
                             <div className="flex-1">
                                 <Routes>
                                     <Route path="/" element={<Home />} />
-                                    <Route path="/image" element={<ImageGen />} />
-                                    <Route path="/voice" element={<Voice />} />
+                                    <Route path="/image" element={
+                                        <ProtectedRoute>
+                                            <ImageGen />
+                                        </ProtectedRoute>
+                                    } />
+                                    <Route path="/voice" element={
+                                        <ProtectedRoute>
+                                            <Voice />
+                                        </ProtectedRoute>
+                                    } />
                                     <Route path="/pricing" element={<Pricing />} />
                                     <Route path="/signin" element={<SignIn />} />
                                     <Route path="/signup" element={<SignUp />} />
