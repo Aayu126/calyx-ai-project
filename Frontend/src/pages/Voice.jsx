@@ -100,10 +100,13 @@ function VoiceContent() {
 
         const recognition = new SpeechRecognition()
         
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.maxAlternatives = 1;
-        recognition.lang = selectedLang || navigator.language || 'hi-IN'
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent)
+        
+        recognition.continuous = !isIOS
+        recognition.interimResults = true
+        recognition.maxAlternatives = 1
+        recognition.lang = selectedLang || 'hi-IN'
 
         recognition.onresult = (event) => {
             let finalChunk = ''
@@ -144,6 +147,9 @@ function VoiceContent() {
                 isRecordingRef.current = false
             }
             if (e.error === 'aborted') return
+            if (e.error === 'network') {
+                console.warn('Network error - trying to continue...')
+            }
         }
 
         recognition.onend = () => {
@@ -154,6 +160,14 @@ function VoiceContent() {
                     setListening(true)
                 } catch(err) {
                     console.warn("Recognition restart failed:", err)
+                    setTimeout(() => {
+                        if (isRecordingRef.current) {
+                            try {
+                                recognition.start()
+                                setListening(true)
+                            } catch(e) {}
+                        }
+                    }, 100)
                 }
             }
         }
@@ -171,8 +185,10 @@ function VoiceContent() {
         const analyser = audioContext.createAnalyser()
         const source = audioContext.createMediaStreamSource(stream)
         source.connect(analyser)
-        analyser.fftSize = 512
-        analyser.smoothingTimeConstant = 0.8
+        
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+        analyser.fftSize = isMobile ? 128 : 256
+        analyser.smoothingTimeConstant = 0.5
         
         analyserRef.current = analyser
         audioContextRef.current = audioContext
@@ -190,7 +206,7 @@ function VoiceContent() {
                 for (let j = 0; j < step; j++) {
                     sum += dataArray[i * step + j] || 0
                 }
-                bars[i] = Math.max(4, (sum / step) * 0.6)
+                bars[i] = Math.max(4, (sum / step) * 0.5)
             }
             
             setVolumeBars(bars)
@@ -249,27 +265,27 @@ function VoiceContent() {
 
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ 
-                    audio: {
-                        echoCancellation: true,
-                        noiseSuppression: true,
-                        autoGainControl: true
-                    } 
+                    audio: true
                 })
                 streamRef.current = stream
                 startVisualizer(stream)
                 
-                let mimeType = ''
-                if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+                let mimeType = 'audio/webm'
+                
+                if (isMobile) {
+                    if (MediaRecorder.isTypeSupported('audio/mp4')) {
+                        mimeType = 'audio/mp4'
+                    } else if (MediaRecorder.isTypeSupported('audio/3gpp')) {
+                        mimeType = 'audio/3gpp'
+                    } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+                        mimeType = 'audio/webm'
+                    }
+                } else if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
                     mimeType = 'audio/webm;codecs=opus'
-                } else if (MediaRecorder.isTypeSupported('audio/webm')) {
-                    mimeType = 'audio/webm'
-                } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
-                    mimeType = 'audio/mp4'
-                } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
-                    mimeType = 'audio/ogg'
                 }
                 
-                const mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined)
+                const mediaRecorder = new MediaRecorder(stream, { mimeType })
                 chunksRef.current = []
 
                 mediaRecorder.ondataavailable = (e) => {
@@ -277,7 +293,7 @@ function VoiceContent() {
                 }
                 
                 mediaRecorder.onstop = () => {
-                    const audioBlob = new Blob(chunksRef.current, { type: mimeType || 'audio/webm' })
+                    const audioBlob = new Blob(chunksRef.current, { type: mimeType })
                     const lang = selectedLangRef.current
                     transcribeAudio(audioBlob, lang).then((data) => {
                         if (data && data.text && data.text.trim().length > 0) {
@@ -293,7 +309,7 @@ function VoiceContent() {
                     })
                 }
 
-                mediaRecorder.start(1000)
+                mediaRecorder.start()
                 mediaRecorderRef.current = mediaRecorder
             } catch (err) {
                 console.error("Microphone access error:", err)
