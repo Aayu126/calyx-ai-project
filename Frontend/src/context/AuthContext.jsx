@@ -90,7 +90,7 @@ export function AuthProvider({ children }) {
 
     /** Handle OAuth redirect callback — reads token from URL params */
     const handleOAuthCallback = (searchParams) => {
-        setLoading(true) // Ensure loading is true while we process the callback
+        setLoading(true)
         const tkn = searchParams.get('token')
         const name = searchParams.get('name')
         const email = searchParams.get('email')
@@ -98,6 +98,7 @@ export function AuthProvider({ children }) {
         
         if (tkn) {
             localStorage.setItem('calyx_token', tkn)
+            setToken(tkn)
             
             // Try to set user from token first (more reliable id/sub)
             const decoded = decodeAndSetUser(tkn)
@@ -111,11 +112,12 @@ export function AuthProvider({ children }) {
                 })
             }
             
-            setToken(tkn)
-            setLoading(false)
+            // We DON'T set loading false here because the useEffect on token 
+            // will handle it once the state is synchronized.
+            // But to be safe for immediate navigation:
             return true
         }
-        setLoading(false) // Reset loading if no token found
+        setLoading(false)
         return false
     }
 

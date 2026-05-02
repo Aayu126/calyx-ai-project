@@ -34,6 +34,7 @@ from flask import Flask, request, jsonify, Response, redirect
 from flask_cors import CORS
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+import requests
 import jwt
 import bcrypt
 
@@ -592,10 +593,13 @@ def auth_google():
     frontend_origin = request.args.get("frontend_origin", FRONTEND_URL)
     state = urllib.parse.quote(frontend_origin, safe="")
 
-    # Ensure redirect_uri uses https in production
-    base_url = request.host_url.rstrip('/')
-    if "onrender.com" in base_url and not base_url.startswith("https"):
-        base_url = base_url.replace("http://", "https://")
+    # Determine the backend base URL robustly
+    # Use BACKEND_URL env var if set, otherwise fallback to request host
+    base_url = os.environ.get("BACKEND_URL")
+    if not base_url:
+        base_url = request.host_url.rstrip('/')
+        if "onrender.com" in base_url and not base_url.startswith("https"):
+            base_url = base_url.replace("http://", "https://")
     
     redirect_uri = f"{base_url}/api/auth/google/callback"
     google_auth_url = (
@@ -626,35 +630,50 @@ def auth_google_callback():
     if not code:
         return redirect(f"{frontend_origin}/signin?error=no_code")
 
-    # Ensure redirect_uri matches what was sent to Google
-    base_url = request.host_url.rstrip('/')
-    if "onrender.com" in base_url and not base_url.startswith("https"):
-        base_url = base_url.replace("http://", "https://")
+    # Determine the backend base URL robustly
+    base_url = os.environ.get("BACKEND_URL")
+    if not base_url:
+        base_url = request.host_url.rstrip('/')
+        if "onrender.com" in base_url and not base_url.startswith("https"):
+            base_url = base_url.replace("http://", "https://")
         
     redirect_uri = f"{base_url}/api/auth/google/callback"
 
     # Exchange code for tokens
     try:
-        token_data = urllib.parse.urlencode({
+        token_data = {
             "code": code,
             "client_id": GOOGLE_CLIENT_ID,
             "client_secret": GOOGLE_CLIENT_SECRET,
             "redirect_uri": redirect_uri,
             "grant_type": "authorization_code",
-        }).encode()
+        }
 
-        req = urllib.request.Request("https://oauth2.googleapis.com/token", data=token_data)
-        req.add_header("Content-Type", "application/x-www-form-urlencoded")
-        resp = urllib.request.urlopen(req)
-        token_resp = json.loads(resp.read())
+        print(f"[DEBUG] Exchanging code for token with redirect_uri: {redirect_uri}")
+        token_resp = requests.post("https://oauth2.googleapis.com/token", data=token_data)
+        
+        if not token_resp.ok:
+            print(f"[ERROR] Token exchange failed: {token_resp.text}")
+            return redirect(f"{frontend_origin}/signin?error=google_auth_failed&details=token_exchange")
+
+        token_json = token_resp.json()
+        access_token = token_json.get("access_token")
+
+        if not access_token:
+            print(f"[ERROR] No access_token in response: {token_json}")
+            return redirect(f"{frontend_origin}/signin?error=google_auth_failed&details=no_access_token")
 
         # Get user info
-        access_token = token_resp["access_token"]
-        req2 = urllib.request.Request("https://www.googleapis.com/oauth2/v2/userinfo")
-        req2.add_header("Authorization", f"Bearer {access_token}")
-        resp2 = urllib.request.urlopen(req2)
-        user_info = json.loads(resp2.read())
+        user_resp = requests.get(
+            "https://www.googleapis.com/oauth2/v2/userinfo",
+            headers={"Authorization": f"Bearer {access_token}"}
+        )
+        
+        if not user_resp.ok:
+            print(f"[ERROR] User info fetch failed: {user_resp.text}")
+            return redirect(f"{frontend_origin}/signin?error=google_auth_failed&details=user_info")
 
+        user_info = user_resp.json()
         email = user_info.get("email", "")
         name = user_info.get("name", email.split("@")[0])
         picture = user_info.get("picture", "")
@@ -665,6 +684,10 @@ def auth_google_callback():
 
         if existing:
             user_id = existing["id"]
+            # Update user info if it's missing or changed
+            existing["name"] = name
+            existing["picture"] = picture
+            _save_users(users)
         else:
             user_id = str(uuid.uuid4())
             users.append({
@@ -673,18 +696,28 @@ def auth_google_callback():
                 "email": email,
                 "password": "",
                 "provider": "google",
+                "picture": picture,
                 "created_at": datetime.now().isoformat()
             })
             _save_users(users)
 
         token = _generate_jwt(user_id, email, name, picture)
-        # Redirect back to the EXACT port the user came from
-        return redirect(f"{frontend_origin}/auth/callback?token={token}&name={urllib.parse.quote(name)}&email={urllib.parse.quote(email)}&picture={urllib.parse.quote(picture)}")
-
+        
+        # Redirect back to frontend
+        import urllib.parse
+        params = urllib.parse.urlencode({
+            "token": token,
+            "name": name,
+            "email": email,
+            "picture": picture
+        })
+        return redirect(f"{frontend_origin}/auth/callback?{params}")
 
     except Exception as e:
-        print(f"Google OAuth exchange error: {e}")
-        return redirect(f"{FRONTEND_URL}/signin?error=google_auth_failed")
+        print(f"[CRITICAL] Google OAuth exception: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return redirect(f"{frontend_origin}/signin?error=google_auth_failed&details=exception")
 
 
 @app.route("/api/auth/google/frontend", methods=["POST"])
