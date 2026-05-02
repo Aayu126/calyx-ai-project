@@ -47,21 +47,31 @@ function VoiceContent() {
     const [isSupported, setIsSupported] = useState(true)
     const [isSecureContext, setIsSecureContext] = useState(true)
     const [ttsError, setTtsError] = useState('')
+    const [volumeBars, setVolumeBars] = useState(new Array(16).fill(4))
     
     const recognitionRef = useRef(null)
     const mediaRecorderRef = useRef(null)
     const chunksRef = useRef([])
-    const [volume, setVolume] = useState(0)
     const audioContextRef = useRef(null)
     const analyserRef = useRef(null)
     const animationFrameRef = useRef(null)
     const isRecordingRef = useRef(false)
     const ttsAudioRef = useRef(null)
     const streamRef = useRef(null)
+    const selectedLangRef = useRef('')
+    const transcriptRef = useRef('')
 
     useEffect(() => {
         isRecordingRef.current = isRecording
     }, [isRecording])
+
+    useEffect(() => {
+        selectedLangRef.current = selectedLang
+    }, [selectedLang])
+
+    useEffect(() => {
+        transcriptRef.current = transcript
+    }, [transcript])
 
     useEffect(() => {
         setIsSecureContext(window.isSecureContext || location.protocol === 'https:' || location.hostname === 'localhost')
@@ -73,18 +83,6 @@ function VoiceContent() {
         }
         if (audioContextRef.current.state === 'suspended') {
             await audioContextRef.current.resume()
-        }
-    }, [])
-
-    const startRecognition = useCallback((recognition) => {
-        try {
-            if (recognitionRef.current === recognition) {
-                recognition.start()
-            }
-        } catch (e) {
-            if (e.message && !e.message.includes('already started')) {
-                console.error("Recognition start error:", e)
-            }
         }
     }, [])
 
@@ -145,6 +143,7 @@ function VoiceContent() {
                 setListening(false)
                 isRecordingRef.current = false
             }
+            if (e.error === 'aborted') return
         }
 
         recognition.onend = () => {
@@ -159,7 +158,7 @@ function VoiceContent() {
                             console.warn("Recognition restart failed:", err)
                         }
                     }
-                }, 100);
+                }, 50);
             }
         }
 
@@ -176,7 +175,8 @@ function VoiceContent() {
         const analyser = audioContext.createAnalyser()
         const source = audioContext.createMediaStreamSource(stream)
         source.connect(analyser)
-        analyser.fftSize = 256
+        analyser.fftSize = 512
+        analyser.smoothingTimeConstant = 0.8
         
         analyserRef.current = analyser
         audioContextRef.current = audioContext
@@ -186,12 +186,19 @@ function VoiceContent() {
 
         const updateVolume = () => {
             analyser.getByteFrequencyData(dataArray)
-            let sum = 0
-            for (let i = 0; i < bufferLength; i++) {
-                sum += dataArray[i]
+            const bars = new Array(16).fill(0)
+            const step = Math.floor(bufferLength / 16)
+            
+            for (let i = 0; i < 16; i++) {
+                let sum = 0
+                for (let j = 0; j < step; j++) {
+                    sum += dataArray[i * step + j] || 0
+                }
+                bars[i] = Math.max(4, (sum / step) * 0.6)
             }
-            const average = sum / bufferLength
-            setVolume(average)
+            
+            setVolumeBars(bars)
+            
             if (isRecordingRef.current) {
                 animationFrameRef.current = requestAnimationFrame(updateVolume)
             }
@@ -202,8 +209,8 @@ function VoiceContent() {
     const stopAllRecording = useCallback(() => {
         setIsRecording(false)
         setListening(false)
-        setVolume(0)
         isRecordingRef.current = false
+        setVolumeBars(new Array(16).fill(4))
         
         if (recognitionRef.current) {
             try { recognitionRef.current.stop(); } catch(e) {}
@@ -229,6 +236,7 @@ function VoiceContent() {
             setInterimText('')
             setDetectedLang('')
             setTtsError('')
+            transcriptRef.current = ''
             
             await unlockAudioContext()
             
@@ -236,7 +244,11 @@ function VoiceContent() {
             isRecordingRef.current = true
 
             if (recognitionRef.current) {
-                startRecognition(recognitionRef.current)
+                try {
+                    recognitionRef.current.start()
+                } catch (e) {
+                    console.error("Recognition start error:", e)
+                }
             }
 
             try {
@@ -244,24 +256,27 @@ function VoiceContent() {
                     audio: {
                         echoCancellation: true,
                         noiseSuppression: true,
-                        autoGainControl: true
+                        autoGainControl: true,
+                        channelCount: 1,
+                        sampleRate: 16000
                     } 
                 })
                 streamRef.current = stream
                 startVisualizer(stream)
                 
                 let mimeType = ''
-                if (MediaRecorder.isTypeSupported('audio/webm')) {
+                if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+                    mimeType = 'audio/webm;codecs=opus'
+                } else if (MediaRecorder.isTypeSupported('audio/webm')) {
                     mimeType = 'audio/webm'
                 } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
                     mimeType = 'audio/mp4'
                 } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
                     mimeType = 'audio/ogg'
-                } else {
-                    mimeType = ''
                 }
                 
-                const mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined)
+                const options = mimeType ? { mimeType, audioBitsPerSecond: 128000 } : { audioBitsPerSecond: 128000 }
+                const mediaRecorder = new MediaRecorder(stream, options)
                 chunksRef.current = []
 
                 mediaRecorder.ondataavailable = (e) => {
@@ -272,20 +287,22 @@ function VoiceContent() {
                     const audioBlob = new Blob(chunksRef.current, { type: mimeType || 'audio/webm' })
 
                     try {
-                        const data = await transcribeAudio(audioBlob, selectedLang)
+                        const lang = selectedLangRef.current
+                        const data = await transcribeAudio(audioBlob, lang)
                         if (data.text && data.text.trim().length > 0) {
-                            setTranscript((prev) => {
-                                const clean = data.text.trim()
-                                if (prev && prev.length >= clean.length) return prev
-                                return clean
-                            })
+                            const clean = data.text.trim()
+                            const prev = transcriptRef.current
+                            if (!prev || clean.length > prev.length) {
+                                setTranscript(clean)
+                                transcriptRef.current = clean
+                            }
                         }
                     } catch (err) {
                         console.error("Backend transcription failed:", err)
                     }
                 }
 
-                mediaRecorder.start(1000)
+                mediaRecorder.start(500)
                 mediaRecorderRef.current = mediaRecorder
             } catch (err) {
                 console.error("Microphone access error:", err)
@@ -356,12 +373,24 @@ function VoiceContent() {
         utterance.rate = 1.0
         utterance.pitch = 1.0
         
+        const voices = window.speechSynthesis.getVoices()
+        if (voices.length > 0) {
+            const preferred = voices.find(v => v.lang.startsWith(langCode.split('-')[0]))
+            if (preferred) utterance.voice = preferred
+        }
+        
         utterance.onstart = () => setPlaying(true)
         utterance.onend = () => setPlaying(false)
         utterance.onerror = () => setPlaying(false)
         
         window.speechSynthesis.speak(utterance)
     }, [selectedLang])
+
+    useEffect(() => {
+        if (window.speechSynthesis && window.speechSynthesis.getVoices) {
+            window.speechSynthesis.getVoices()
+        }
+    }, [])
 
     const stopPlayback = useCallback(() => {
         if (ttsAudioRef.current) {
@@ -512,18 +541,12 @@ function VoiceContent() {
 
                                 {isRecording && (
                                     <div className="flex items-end gap-1 h-12 mb-8">
-                                        {[...Array(16)].map((_, i) => (
+                                        {volumeBars.map((height, i) => (
                                             <motion.div
                                                 key={i}
-                                                animate={{ 
-                                                    height: [4, Math.max(8, volume * 1.5), 4]
-                                                }}
+                                                animate={{ height }}
                                                 className="w-1.5 md:w-2 bg-primary/40 rounded-full"
-                                                transition={{ 
-                                                    repeat: Infinity, 
-                                                    duration: 0.4 + Math.random() * 0.3,
-                                                    delay: i * 0.05
-                                                }}
+                                                transition={{ type: "spring", stiffness: 400, damping: 25 }}
                                             />
                                         ))}
                                     </div>
