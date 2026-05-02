@@ -103,7 +103,7 @@ function VoiceContent() {
         recognition.continuous = true;
         recognition.interimResults = true;
         recognition.maxAlternatives = 1;
-        recognition.lang = selectedLang || 'en-US'
+        recognition.lang = selectedLang || navigator.language || 'hi-IN'
 
         recognition.onresult = (event) => {
             let finalChunk = ''
