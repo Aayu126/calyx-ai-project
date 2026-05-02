@@ -22,6 +22,7 @@ export default function Voice() {
     const [playing, setPlaying] = useState(false)
     const [selectedLang, setSelectedLang] = useState('')   // '' = auto detect
     const [detectedLang, setDetectedLang] = useState('')
+    const [isSupported, setIsSupported] = useState(true)
     const mediaRecorderRef = useRef(null)
     const chunksRef = useRef([])
     const recognitionRef = useRef(null)
@@ -30,7 +31,7 @@ export default function Voice() {
     useEffect(() => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
-            console.warn("Speech Recognition API not supported in this browser.");
+            setIsSupported(false)
             return;
         }
 
@@ -38,8 +39,9 @@ export default function Voice() {
         recognitionRef.current?.abort()
 
         const recognition = new SpeechRecognition()
-        recognition.continuous = true
-        recognition.interimResults = true
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        recognition.continuous = !isMobile;
+        recognition.interimResults = true;
         // '' lets the browser use the OS default / auto-detect
         recognition.lang = selectedLang || 'en-US'
 
@@ -124,14 +126,14 @@ export default function Voice() {
             if (recognitionRef.current) {
                 try {
                     // Mobile browsers require a fresh start call in the click handler
+                    // Abort any previous session first to ensure a clean state
+                    recognitionRef.current.abort()
+                    
+                    // Small delay to ensure abort finished, but keep it within user interaction window
+                    // Actually, calling start() directly after abort() often works if the browser handles it
                     recognitionRef.current.start()
                 } catch (e) {
                     console.error("Recognition start error:", e)
-                    // If already started, ignore or abort and restart
-                    try {
-                        recognitionRef.current.abort();
-                        setTimeout(() => recognitionRef.current.start(), 100);
-                    } catch(err) {}
                 }
             }
 
@@ -140,6 +142,7 @@ export default function Voice() {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
                 
                 // Detection for mobile-friendly mime types
+                // iOS Safari specifically prefers audio/mp4 or audio/aac
                 const mimeType = MediaRecorder.isTypeSupported('audio/webm') 
                     ? 'audio/webm' 
                     : (MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : 'audio/ogg')
@@ -158,7 +161,6 @@ export default function Voice() {
                     try {
                         const data = await transcribeAudio(audioBlob, selectedLang)
                         if (data.text && data.text.trim().length > (transcript || '').length) {
-                            // Only use backend if it's longer/better than browser's real-time
                             setTranscript(data.text)
                         }
                     } catch (err) {
@@ -170,7 +172,9 @@ export default function Voice() {
                 mediaRecorderRef.current = mediaRecorder
             } catch (err) {
                 console.error("Mic access failed:", err)
-                // If mic access fails, alert the user or show a message
+                setIsRecording(false)
+                setListening(false)
+                alert("Microphone access was denied or failed. Please check your browser permissions.")
             }
         }
     }
@@ -257,6 +261,15 @@ export default function Voice() {
                                 </div>
                             </div>
 
+                            {!isSupported && (
+                                <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center gap-3">
+                                    <span className="material-icons text-amber-500 text-lg">warning</span>
+                                    <p className="text-[10px] md:text-xs text-amber-200/80 font-medium">
+                                        Voice recognition is not supported in this browser. Please try Chrome or Safari.
+                                    </p>
+                                </div>
+                            )}
+
                             {/* Language Selector */}
                             <div className="mb-6 md:mb-8">
                                 <label className="block text-[9px] md:text-[10px] font-bold uppercase tracking-[0.15em] text-foreground/40 mb-4">
@@ -331,7 +344,10 @@ export default function Voice() {
                                     </button>
                                 </div>
                                 <p className="text-xs md:text-sm text-foreground/40 mt-6 md:mt-8 font-geist text-center">
-                                    {isRecording ? 'Capturing audio stream...' : 'Click to start neural transcription'}
+                                    {isRecording 
+                                        ? (listening ? 'Listening to voice signals...' : 'Initializing audio stream...') 
+                                        : 'Click to start neural transcription'
+                                    }
                                 </p>
                             </div>
 
@@ -339,6 +355,18 @@ export default function Voice() {
                             <div className="relative group">
                                 <div className="absolute inset-0 bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl" />
                                 <div className="relative min-h-[140px] md:min-h-[160px] bg-white/[0.02] rounded-[1.25rem] md:rounded-[1.5rem] p-5 md:p-6 border border-white/[0.08] font-geist">
+                                    {isRecording && listening && (
+                                        <div className="absolute top-4 right-4 flex gap-1 h-3 items-center">
+                                            {[...Array(4)].map((_, i) => (
+                                                <motion.div
+                                                    key={i}
+                                                    animate={{ height: [2, 10, 2] }}
+                                                    transition={{ repeat: Infinity, duration: 0.6, delay: i * 0.1 }}
+                                                    className="w-0.5 bg-primary rounded-full"
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
                                     {(transcript || interimText) ? (
                                         <div className="text-sm md:text-base leading-relaxed text-foreground/90">
                                             {transcript}
