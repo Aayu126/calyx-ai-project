@@ -487,6 +487,13 @@ def voice_transcribe():
     if not groq_key:
         return jsonify({"error": "Transcription service (Groq) not configured on server"}), 503
 
+    # Get optional language hint from frontend (e.g., 'mr-IN', 'hi-IN')
+    lang_code = request.form.get('language', '')
+    whisper_lang = None
+    if lang_code:
+        # Whisper expects ISO 639-1 (2-letter) codes
+        whisper_lang = lang_code.split('-')[0].lower()
+
     try:
         from groq import Groq
         client = Groq(api_key=groq_key)
@@ -497,13 +504,15 @@ def voice_transcribe():
         
         try:
             with open(temp_path, "rb") as file:
+                # Use transcriptions.create (not translations) to get original language script
                 transcription = client.audio.transcriptions.create(
                     file=(temp_path, file.read()),
                     model="whisper-large-v3",
                     response_format="json",
+                    language=whisper_lang if whisper_lang else None
                 )
             
-            return jsonify({"text": transcription.get("text", "")})
+            return jsonify({"text": transcription.text if hasattr(transcription, 'text') else transcription.get("text", "")})
         finally:
             if os.path.exists(temp_path):
                 os.remove(temp_path)

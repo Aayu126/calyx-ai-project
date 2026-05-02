@@ -93,9 +93,12 @@ export async function generateImage(prompt, options = {}) {
 }
 
 // ─── Voice / Speech ──────────────────────────────────
-export async function transcribeAudio(audioBlob) {
+export async function transcribeAudio(audioBlob, language = '') {
     const formData = new FormData()
     formData.append('audio', audioBlob)
+    if (language) {
+        formData.append('language', language)
+    }
     const token = localStorage.getItem('calyx_token')
     const res = await fetch(`${API_URL}/voice/transcribe`, {
         method: 'POST',

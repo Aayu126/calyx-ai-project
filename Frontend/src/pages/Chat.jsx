@@ -203,7 +203,7 @@ export default function Chat() {
     }
 
     return (
-        <div className="h-screen flex bg-background font-geist">
+        <div className="h-[100dvh] flex bg-background font-geist overflow-hidden relative">
             {/* Ambient background for depth */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden">
                 <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-primary/10 blur-[120px] rounded-full" />
@@ -328,7 +328,7 @@ export default function Chat() {
             )}
 
             {/* Main Chat Area */}
-            <div className="flex-1 flex flex-col min-w-0 relative z-10">
+            <div className="flex-1 flex flex-col min-w-0 relative z-10 h-full overflow-hidden">
                 {/* Top Bar */}
                 <header className="h-14 md:h-20 flex items-center justify-between px-4 md:px-8 bg-background/50 backdrop-blur-md border-b border-white/5">
                     <div className="flex items-center gap-2 md:gap-6 overflow-hidden">
@@ -411,7 +411,7 @@ export default function Chat() {
                 </header>
 
                 {/* Messages Container */}
-                <div className="flex-1 overflow-y-auto chat-scroll px-3 md:px-6 py-4 md:py-10">
+                <div className="flex-1 overflow-y-auto chat-scroll px-3 md:px-6 py-4 md:py-10 min-h-0">
                     <div className="max-w-4xl mx-auto space-y-4 md:space-y-10">
                         {/* New Chat Empty State */}
                         {messages.length <= 1 && (
@@ -474,7 +474,7 @@ export default function Chat() {
                                 </div>
 
                                 {/* Bubble */}
-                                <div className={`max-w-[90%] md:max-w-[80%] lg:max-w-[70%] space-y-1.5`}>
+                                <div className="max-w-[85%] md:max-w-[80%] lg:max-w-[70%] space-y-1.5 min-w-0">
                                     <div className={`p-3.5 md:p-6 rounded-[20px] md:rounded-[32px] text-[13px] md:text-sm leading-relaxed font-geist ${
                                         msg.role === 'user'
                                         ? 'bg-primary text-white shadow-2xl shadow-primary/20 rounded-tr-sm'
@@ -523,7 +523,7 @@ export default function Chat() {
                 </div>
 
                 {/* Input Area */}
-                <div className="p-3 md:p-8 bg-gradient-to-t from-background via-background to-transparent">
+                <div className="p-3 md:p-6 bg-gradient-to-t from-background via-background to-transparent shrink-0">
                     <div className="max-w-4xl mx-auto relative group">
                         <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-[20px] md:rounded-[32px] blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
                         
