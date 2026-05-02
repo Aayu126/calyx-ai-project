@@ -140,7 +140,8 @@ export default function Pricing() {
 
                 {/* Plan Cards */}
                 <div className="grid lg:grid-cols-3 gap-8 mb-32">
-                    {PLANS.map((plan, index)                         <motion.div
+                    {PLANS.map((plan, index) => (
+                        <motion.div
                             key={plan.name}
                             initial={{ opacity: 0, y: 40 }}
                             whileInView={{ opacity: 1, y: 0 }}
@@ -197,7 +198,7 @@ export default function Pricing() {
                                     </li>
                                 ))}
                             </ul>
-                        </motion.div>n.div>
+                        </motion.div>
                     ))}
                 </div>
 
