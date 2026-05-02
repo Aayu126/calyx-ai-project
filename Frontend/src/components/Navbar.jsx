@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
-import { User, LogOut, Menu, X, ChevronDown } from 'lucide-react'
-import { useState } from 'react'
+// Removed Lucide imports to prevent crashes due to version mismatches
+// import { User, LogOut, Menu, X, ChevronDown } from 'lucide-react'
+import React, { useState } from 'react'
 
 export default function Navbar() {
     const { user, logout } = useAuth()
@@ -66,11 +67,11 @@ export default function Navbar() {
                                     <img src={user.picture} alt="" className="w-5 h-5 md:w-6 md:h-6 rounded-full object-cover border border-primary/20" />
                                 ) : (
                                     <div className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-primary/20 flex items-center justify-center">
-                                        <User size={12} className="text-primary" />
+                                        <span className="material-icons text-[12px] text-primary">person</span>
                                     </div>
                                 )}
                                 <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider hidden xs:block">{user.name?.split(' ')[0] || 'User'}</span>
-                                <ChevronDown size={12} className={`transition-transform duration-300 text-foreground/50 ${isProfileOpen ? 'rotate-180' : ''}`} />
+                                <span className={`material-icons text-[14px] transition-transform duration-300 text-foreground/50 ${isProfileOpen ? 'rotate-180' : ''}`}>expand_more</span>
                             </button>
 
                             {/* Profile Dropdown */}
@@ -98,7 +99,7 @@ export default function Navbar() {
                                                     onClick={() => setIsProfileOpen(false)}
                                                     className="flex items-center gap-3 px-4 py-2.5 text-[10px] md:text-xs font-bold uppercase tracking-wider hover:bg-white/5 rounded-xl transition-colors group"
                                                 >
-                                                    <User size={14} className="group-hover:text-primary transition-colors" />
+                                                    <span className="material-icons text-sm group-hover:text-primary transition-colors">dashboard</span>
                                                     Workspace
                                                 </Link>
                                                 <button 
@@ -108,7 +109,7 @@ export default function Navbar() {
                                                     }}
                                                     className="w-full flex items-center gap-3 px-4 py-2.5 text-[10px] md:text-xs font-bold uppercase tracking-wider text-red-400 hover:bg-red-500/10 rounded-xl transition-colors group"
                                                 >
-                                                    <LogOut size={14} />
+                                                    <span className="material-icons text-sm">logout</span>
                                                     Logout
                                                 </button>
                                             </div>
@@ -131,9 +132,11 @@ export default function Navbar() {
                     {/* Mobile Menu Toggle */}
                     <button 
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className="md:hidden p-1 text-foreground/70 hover:text-foreground"
+                        className="md:hidden p-1 text-foreground/70 hover:text-foreground flex items-center justify-center"
                     >
-                        {isMenuOpen ? <X size={18} /> : <Menu size={18} />}
+                        <span className="material-icons text-xl">
+                            {isMenuOpen ? 'close' : 'menu'}
+                        </span>
                     </button>
                 </div>
             </motion.nav>

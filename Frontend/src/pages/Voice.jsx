@@ -1,6 +1,29 @@
-import { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { transcribeAudio, textToSpeech } from '../services/api'
+
+// Error Boundary for Voice Module
+class VoiceErrorBoundary extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false };
+    }
+    static getDerivedStateFromError(error) { return { hasError: true }; }
+    componentDidCatch(error, errorInfo) { console.error("Voice Error:", error, errorInfo); }
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="flex flex-col items-center justify-center p-12 text-center bg-background/50 backdrop-blur-xl rounded-3xl border border-white/10 mt-20">
+                    <span className="material-icons text-5xl text-red-500 mb-4">error_outline</span>
+                    <h2 className="text-2xl font-bold mb-2">Voice Engine Encountered an Issue</h2>
+                    <p className="text-foreground/60 mb-6">The browser's speech recognition might have lost connection.</p>
+                    <button onClick={() => window.location.reload()} className="px-6 py-2 bg-primary rounded-full font-bold">Restart Voice Module</button>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
 
 const LANGUAGES = [
     { label: 'Auto Detect', code: '' },
@@ -13,7 +36,7 @@ const LANGUAGES = [
     { label: 'Japanese', code: 'ja-JP' },
 ]
 
-export default function Voice() {
+function VoiceContent() {
     const [isRecording, setIsRecording] = useState(false)
     const [transcript, setTranscript] = useState('')
     const [interimText, setInterimText] = useState('')
@@ -23,6 +46,8 @@ export default function Voice() {
     const [selectedLang, setSelectedLang] = useState('')   // '' = auto detect
     const [detectedLang, setDetectedLang] = useState('')
     const [isSupported, setIsSupported] = useState(true)
+    
+    const recognitionRef = useRef(null)
     const mediaRecorderRef = useRef(null)
     const chunksRef = useRef([])
     const [volume, setVolume] = useState(0)
@@ -48,13 +73,11 @@ export default function Voice() {
             return;
         }
 
-        // Stop any existing session
         recognitionRef.current?.abort()
 
         const recognition = new SpeechRecognition()
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         
-        // Mobile browsers often fail with continuous=true
         recognition.continuous = !isMobile;
         recognition.interimResults = true;
         recognition.lang = selectedLang || 'en-US'
@@ -94,7 +117,6 @@ export default function Voice() {
                 setIsRecording(false)
                 setListening(false)
             }
-            // Auto-restart logic for mobile
             if (isRecording && (e.error === 'network' || e.error === 'no-speech')) {
                 setTimeout(() => {
                     if (isRecording) {
@@ -106,94 +128,11 @@ export default function Voice() {
 
         recognition.onend = () => {
             if (isRecording) {
-                // On mobile, keep it alive if user hasn't manually stopped
                 setTimeout(() => {
                     if (isRecording) {
                         try { recognition.start(); } catch(err) {}
                     }
                 }, 100);
-            } else {
-                setListening(false)
-                setInterimText('')
-            }
-        }
-
-        recognitionRef.current = recognition
-        
-        return () => {
-            recognition.abort();
-        };
-    }, [selectedLang, isRecording])
-
-    // Build / rebuild recognition whenever the selected language changes
-    useEffect(() => {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-            setIsSupported(false)
-            return;
-        }
-
-        // Stop any existing session
-        recognitionRef.current?.abort()
-
-        const recognition = new SpeechRecognition()
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        recognition.continuous = !isMobile;
-        recognition.interimResults = true;
-        // '' lets the browser use the OS default / auto-detect
-        recognition.lang = selectedLang || 'en-US'
-
-        recognition.onresult = (event) => {
-            let finalChunk = ''
-            let interimChunk = ''
-
-            for (let i = event.resultIndex; i < event.results.length; i++) {
-                const result = event.results[i]
-                if (result.isFinal) {
-                    finalChunk += result[0].transcript
-                    if (result[0].lang) setDetectedLang(result[0].lang)
-                } else {
-                    interimChunk += result[0].transcript
-                }
-            }
-
-            if (finalChunk) {
-                setTranscript((prev) => {
-                    const separator = (prev && !prev.endsWith(' ') && !prev.endsWith('.') && !prev.endsWith('\n')) ? ' ' : ''
-                    return prev + separator + finalChunk.trim()
-                })
-                setInterimText('')
-            }
-            if (interimChunk) setInterimText(interimChunk)
-        }
-
-        recognition.onstart = () => {
-            setListening(true);
-            setInterimText('');
-        };
-
-        recognition.onerror = (e) => {
-            console.warn('Speech recognition error:', e.error)
-            if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-                setIsRecording(false)
-                setListening(false)
-            }
-            // Auto-restart on some non-fatal errors if recording
-            if (isRecording && (e.error === 'network' || e.error === 'no-speech')) {
-                try { recognition.start(); } catch(err) {}
-            }
-        }
-
-        recognition.onend = () => {
-            // On mobile, recognition often stops automatically.
-            // If we are still 'recording', try to restart.
-            if (isRecording) {
-                try {
-                    recognition.start()
-                } catch {
-                    setListening(false)
-                    setInterimText('')
-                }
             } else {
                 setListening(false)
                 setInterimText('')
@@ -245,17 +184,14 @@ export default function Voice() {
             if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
             if (audioContextRef.current) audioContextRef.current.close()
         } else {
-            // Clear previous state
             setTranscript('')
             setInterimText('')
             setDetectedLang('')
             
-            // Essential for Mobile: Handle AudioContext inside user gesture
             await unlockAudioContext()
             
             setIsRecording(true)
 
-            // Start live Web Speech API transcription
             if (recognitionRef.current) {
                 try {
                     recognitionRef.current.abort()
@@ -265,13 +201,10 @@ export default function Voice() {
                 }
             }
 
-            // Also record audio for backend Whisper transcription
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
                 startVisualizer(stream)
                 
-                // Detection for mobile-friendly mime types
-                // iOS Safari specifically prefers audio/mp4 or audio/aac
                 const mimeType = MediaRecorder.isTypeSupported('audio/webm') 
                     ? 'audio/webm' 
                     : (MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : 'audio/ogg')
@@ -300,10 +233,9 @@ export default function Voice() {
                 mediaRecorder.start()
                 mediaRecorderRef.current = mediaRecorder
             } catch (err) {
-                console.error("Mic access failed:", err)
+                console.error("Microphone access error:", err)
                 setIsRecording(false)
                 setListening(false)
-                alert("Microphone access was denied or failed. Please check your browser permissions.")
             }
         }
     }
@@ -319,200 +251,167 @@ export default function Voice() {
                 setPlaying(false)
                 URL.revokeObjectURL(url)
             }
-            audio.play()
-        } catch {
-            // Fallback: browser TTS
-            const utterance = new SpeechSynthesisUtterance(ttsText)
-            utterance.onend = () => setPlaying(false)
-            speechSynthesis.speak(utterance)
+            await audio.play()
+        } catch (err) {
+            console.error("TTS failed:", err)
+            setPlaying(false)
         }
     }
 
+    if (!isSupported) {
+        return (
+            <div className="flex flex-col items-center justify-center p-12 text-center mt-20">
+                <span className="material-icons text-6xl text-red-500 mb-6">no_meals</span>
+                <h2 className="text-2xl font-bold mb-4">Speech Recognition Not Supported</h2>
+                <p className="text-foreground/60 max-w-md mx-auto">
+                    Your browser does not support the Web Speech API. 
+                    Please try Chrome, Edge, or Safari on a modern device.
+                </p>
+            </div>
+        )
+    }
+
     return (
-        <div className="h-[100dvh] flex flex-col bg-[#050505] text-white font-geist selection:bg-primary/30 selection:text-primary-foreground overflow-hidden">
-            {/* Header */}
-            <nav className="h-16 md:h-20 shrink-0 flex items-center justify-between px-4 md:px-12 bg-[#050505]/80 backdrop-blur-md border-b border-white/5 relative z-50">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-primary to-blue-600 p-[1px]">
-                        <div className="w-full h-full rounded-[15px] bg-[#050505] flex items-center justify-center">
-                            <span className="material-icons text-primary text-xl">graphic_eq</span>
-                        </div>
-                    </div>
-                    <div>
-                        <h2 className="text-sm font-bold tracking-tight">CALYX <span className="text-primary italic">VOICE</span></h2>
-                        <p className="text-[10px] text-foreground/40 font-medium uppercase tracking-widest">Neural Audio</p>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-4">
-                    <div className="hidden md:flex items-center gap-4 px-4 py-2 bg-white/[0.03] border border-white/[0.05] rounded-xl">
-                        <div className="flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]" />
-                            <span className="text-[10px] font-bold text-foreground/40">ENGINE READY</span>
-                        </div>
-                        <div className="w-[1px] h-3 bg-white/10" />
-                        <span className="text-[10px] font-bold text-primary">v3.0.4-Stable</span>
-                    </div>
-                </div>
-            </nav>
-
-            <main className="flex-1 overflow-y-auto relative p-4 pb-12 md:p-8 md:pb-20 chat-scroll min-h-0">
-                {/* Ambient background for depth */}
-                <div className="absolute top-[-10%] left-[-10%] w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-primary/10 blur-[100px] rounded-full pointer-events-none" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-blue-600/5 blur-[100px] rounded-full pointer-events-none" />
-
+        <div className="text-foreground font-geist selection:bg-primary/30">
+            <main className="pt-24 md:pt-32 pb-20">
                 <motion.section 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8 }}
-                    className="relative z-10 max-w-5xl mx-auto"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="max-w-7xl mx-auto px-4 md:px-8"
                 >
-                    <div className="grid lg:grid-cols-2 gap-6 md:gap-10">
-                        {/* Speech to Text Section */}
+                    {/* Header */}
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6 }}
+                        >
+                            <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold uppercase tracking-[0.2em] mb-4">
+                                Neural Interface v2.0
+                            </span>
+                            <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-4">
+                                Voice <span className="text-primary">Intelligence</span>
+                            </h1>
+                            <p className="text-foreground/60 max-w-xl text-lg leading-relaxed">
+                                Experience high-fidelity multilingual speech recognition and synthesis powered by advanced neural models.
+                            </p>
+                        </motion.div>
+
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="flex flex-col gap-3"
+                        >
+                            <label className="text-[10px] font-bold uppercase tracking-widest text-foreground/40 ml-1">Input Language</label>
+                            <select 
+                                value={selectedLang}
+                                onChange={(e) => setSelectedLang(e.target.value)}
+                                className="bg-white/[0.03] border border-white/[0.08] rounded-2xl px-6 py-4 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all cursor-pointer min-w-[240px] backdrop-blur-md"
+                            >
+                                {LANGUAGES.map(lang => (
+                                    <option key={lang.code} value={lang.code} className="bg-[#0f0f0f]">{lang.label}</option>
+                                ))}
+                            </select>
+                        </motion.div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
+                        {/* Recording Section */}
                         <motion.div 
                             initial={{ opacity: 0, x: -30 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.4, duration: 0.6 }}
                             className="liquid-glass rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 border-white/[0.05]"
                         >
-                            <div className="flex items-center justify-between mb-6 md:mb-8">
+                            <div className="flex items-center justify-between mb-10 md:mb-12">
                                 <h2 className="text-lg md:text-xl font-bold flex items-center gap-3 font-general">
                                     <span className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                                        <span className="material-icons text-primary text-sm">hearing</span>
+                                        <span className="material-icons text-primary text-sm">settings_voice</span>
                                     </span>
-                                    Voice to Text
+                                    Audio Capture
                                 </h2>
-                                <div className="flex items-center gap-2">
-                                    <div className={`w-2 h-2 rounded-full ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-white/20'}`} />
-                                    <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-foreground/40">
-                                        {isRecording ? 'Live' : 'Standby'}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {!isSupported && (
-                                <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center gap-3">
-                                    <span className="material-icons text-amber-500 text-lg">warning</span>
-                                    <p className="text-[10px] md:text-xs text-amber-200/80 font-medium">
-                                        Voice recognition is not supported in this browser. Please try Chrome or Safari.
-                                    </p>
-                                </div>
-                            )}
-
-                            {/* Language Selector */}
-                            <div className="mb-6 md:mb-8">
-                                <label className="block text-[9px] md:text-[10px] font-bold uppercase tracking-[0.15em] text-foreground/40 mb-4">
-                                    Detection Mode
-                                </label>
-                                <div className="flex flex-wrap gap-2">
-                                    {LANGUAGES.map((lang) => (
-                                        <button
-                                            key={lang.code}
-                                            onClick={() => {
-                                                setSelectedLang(lang.code)
-                                                setDetectedLang('')
-                                            }}
-                                            className={`px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-[10px] md:text-xs font-medium transition-all duration-300 border ${
-                                                selectedLang === lang.code
-                                                    ? 'bg-primary text-white border-primary shadow-[0_0_20px_rgba(19,127,236,0.3)]'
-                                                    : 'bg-white/[0.03] text-foreground/60 border-white/[0.05] hover:border-primary/40 hover:bg-primary/5'
-                                            }`}
-                                        >
-                                            {lang.label}
-                                        </button>
-                                    ))}
-                                </div>
-                                <AnimatePresence>
-                                    {detectedLang && (
-                                        <motion.p 
-                                            initial={{ opacity: 0, y: 5 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            className="text-[10px] md:text-[11px] text-emerald-400 mt-4 flex items-center gap-2 font-medium"
-                                        >
-                                            <span className="material-icons text-xs">auto_awesome</span>
-                                            Detected: <span className="uppercase tracking-widest">{detectedLang}</span>
-                                        </motion.p>
-                                    )}
-                                </AnimatePresence>
-                            </div>
-
-                                    {/* Mic Button & Control */}
-                                    <div className="flex flex-col items-center mb-8 md:mb-10 py-2 md:py-4">
-                                        <div className="relative group flex items-center justify-center">
-                                            <AnimatePresence>
-                                                {isRecording && (
-                                                    <>
-                                                        <motion.div 
-                                                            className="absolute w-32 h-32 md:w-40 md:h-40 rounded-full border border-primary/20"
-                                                            animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
-                                                            transition={{ repeat: Infinity, duration: 1.5, ease: "easeOut" }}
-                                                        />
-                                                        {/* Volume Visualizer Rings */}
-                                                        <motion.div 
-                                                            className="absolute w-24 h-24 md:w-32 md:h-32 rounded-full border-2 border-primary/40"
-                                                            animate={{ scale: 1 + (volume / 100) }}
-                                                            transition={{ type: "spring", damping: 15, stiffness: 200 }}
-                                                        />
-                                                    </>
-                                                )}
-                                            </AnimatePresence>
-                                            
-                                            <button
-                                                onClick={toggleRecording}
-                                                className={`relative w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center transition-all duration-500 z-10 ${
-                                                    isRecording
-                                                    ? 'bg-red-500 shadow-[0_0_40px_rgba(239,68,68,0.4)] scale-110'
-                                                    : 'bg-primary shadow-[0_0_30px_rgba(19,127,236,0.3)] hover:scale-105 active:scale-95'
-                                                }`}
-                                            >
-                                                <span className="material-icons text-white text-3xl md:text-4xl">
-                                                    {isRecording ? 'stop' : 'mic'}
-                                                </span>
-                                            </button>
-                                        </div>
-                                        <p className="text-xs md:text-sm text-foreground/40 mt-6 md:mt-8 font-geist text-center px-4">
-                                            {isRecording 
-                                                ? (listening ? 'Listening to neural signals...' : 'Calibrating audio sensors...') 
-                                                : 'Tap the sensor to initiate voice capture'
-                                            }
-                                        </p>
+                                {isRecording && (
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                                        <span className="text-[10px] font-bold uppercase tracking-widest text-red-500/80">Recording</span>
                                     </div>
+                                )}
+                            </div>
 
-                                    {/* Waveform Visualizer */}
-                                    {isRecording && (
-                                        <div className="flex items-center justify-center gap-1 h-8 mb-8">
-                                            {[...Array(12)].map((_, i) => (
-                                                <motion.div
-                                                    key={i}
-                                                    className="w-1 bg-primary/60 rounded-full"
-                                                    animate={{ 
-                                                        height: [4, Math.max(4, volume * (0.3 + Math.random() * 0.7)), 4],
-                                                        opacity: [0.3, 0.8, 0.3]
-                                                    }}
-                                                    transition={{ 
-                                                        repeat: Infinity, 
-                                                        duration: 0.2 + (i * 0.05),
-                                                        ease: "easeInOut"
-                                                    }}
-                                                />
-                                            ))}
+                            <div className="flex flex-col items-center mb-10 md:mb-12">
+                                <div className="relative mb-10">
+                                    <div className={`absolute inset-0 bg-primary/20 blur-[60px] transition-opacity duration-1000 ${isRecording ? 'opacity-100' : 'opacity-0'}`} />
+                                    <button
+                                        onClick={toggleRecording}
+                                        className={`relative w-28 h-28 md:w-36 md:h-36 rounded-full flex items-center justify-center transition-all duration-500 ${
+                                            isRecording 
+                                            ? 'bg-red-500 shadow-[0_0_50px_rgba(239,68,68,0.3)]' 
+                                            : 'bg-primary shadow-[0_0_50px_rgba(19,127,236,0.3)] hover:scale-105'
+                                        }`}
+                                    >
+                                        <span className="material-icons text-white text-4xl md:text-5xl">
+                                            {isRecording ? 'stop' : 'mic'}
+                                        </span>
+                                        
+                                        {/* Pulse Circles */}
+                                        <AnimatePresence>
+                                            {isRecording && (
+                                                <>
+                                                    {[1, 2, 3].map((i) => (
+                                                        <motion.div
+                                                            key={i}
+                                                            initial={{ scale: 1, opacity: 0.5 }}
+                                                            animate={{ scale: 2.2, opacity: 0 }}
+                                                            transition={{ 
+                                                                repeat: Infinity, 
+                                                                duration: 2,
+                                                                delay: i * 0.6,
+                                                                ease: "easeOut"
+                                                            }}
+                                                            className="absolute inset-0 rounded-full border-2 border-red-500/30"
+                                                        />
+                                                    ))}
+                                                </>
+                                            )}
+                                        </AnimatePresence>
+                                    </button>
+                                </div>
+
+                                {isRecording && (
+                                    <div className="flex items-end gap-1 h-12 mb-8">
+                                        {[...Array(16)].map((_, i) => (
+                                            <motion.div
+                                                key={i}
+                                                animate={{ 
+                                                    height: Math.max(4, (volume * (0.5 + Math.random() * 0.5)) * (i < 8 ? (i+1)/8 : (16-i)/8) * 1.5)
+                                                }}
+                                                className="w-1.5 md:w-2 bg-primary/40 rounded-full"
+                                                transition={{ 
+                                                    type: "spring", 
+                                                    stiffness: 300, 
+                                                    damping: 20,
+                                                    delay: i * 0.02
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Transcription Box */}
+                            <div className="relative group">
+                                <div className={`absolute -inset-[1px] bg-gradient-to-r from-primary/20 via-blue-500/20 to-emerald-500/20 blur-[2px] rounded-[1.5rem] transition-opacity duration-500 ${isRecording ? 'opacity-100' : 'opacity-0'}`} />
+                                <div className="relative min-h-[140px] md:min-h-[160px] bg-white/[0.02] rounded-[1.25rem] md:rounded-[1.5rem] p-5 md:p-6 border border-white/[0.08] font-geist backdrop-blur-sm">
+                                    {(transcript || interimText) ? (
+                                        <div className="text-sm md:text-base leading-relaxed text-foreground/90">
+                                            {transcript}
+                                            {interimText && (
+                                                <span className="text-primary/60 italic ml-1 transition-opacity duration-300">
+                                                    {interimText}
+                                                </span>
+                                            )}
                                         </div>
-                                    )}
-
-                                    {/* Transcription Box */}
-                                    <div className="relative group">
-                                        <div className={`absolute -inset-[1px] bg-gradient-to-r from-primary/20 via-blue-500/20 to-emerald-500/20 blur-[2px] rounded-[1.5rem] transition-opacity duration-500 ${isRecording ? 'opacity-100' : 'opacity-0'}`} />
-                                        <div className="relative min-h-[140px] md:min-h-[160px] bg-white/[0.02] rounded-[1.25rem] md:rounded-[1.5rem] p-5 md:p-6 border border-white/[0.08] font-geist backdrop-blur-sm">
-                                            {(transcript || interimText) ? (
-                                                <div className="text-sm md:text-base leading-relaxed text-foreground/90">
-                                                    {transcript}
-                                                    {interimText && (
-                                                        <span className="text-primary/60 italic ml-1 transition-opacity duration-300">
-                                                            {interimText}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            ) : (
+                                    ) : (
                                         <div className="flex flex-col items-center justify-center h-full text-foreground/20 italic text-sm text-center py-4">
                                             <span className="material-icons text-2xl md:text-3xl mb-3 opacity-20">notes</span>
                                             {isRecording ? 'Processing voice signals...' : 'Your transcription will emerge here'}
@@ -639,5 +538,13 @@ export default function Voice() {
                 </motion.section>
             </main>
         </div>
+    )
+}
+
+export default function Voice() {
+    return (
+        <VoiceErrorBoundary>
+            <VoiceContent />
+        </VoiceErrorBoundary>
     )
 }
