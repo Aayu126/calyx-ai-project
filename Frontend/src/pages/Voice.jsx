@@ -227,7 +227,7 @@ export default function Voice() {
                 </div>
             </nav>
 
-            <main className="flex-1 overflow-y-auto relative p-4 md:p-8 chat-scroll min-h-0">
+            <main className="flex-1 overflow-y-auto relative p-4 pb-12 md:p-8 md:pb-20 chat-scroll min-h-0">
                 {/* Ambient background for depth */}
                 <div className="absolute top-[-10%] left-[-10%] w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-primary/10 blur-[100px] rounded-full pointer-events-none" />
                 <div className="absolute bottom-[-10%] right-[-10%] w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-blue-600/5 blur-[100px] rounded-full pointer-events-none" />

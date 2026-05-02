@@ -338,9 +338,9 @@ export default function Chat() {
                         >
                             <span className="material-icons text-hero-sub text-lg md:text-xl">{sidebarOpen ? 'menu_open' : 'menu'}</span>
                         </button>
-                        <div className="flex flex-col min-w-0">
-                            <span className="text-[8px] md:text-[10px] font-general font-bold uppercase tracking-[0.2em] text-primary mb-0.5 truncate opacity-90">Session Status</span>
-                            <h2 className="text-[12px] md:text-sm font-general font-bold text-foreground truncate max-w-[140px] xs:max-w-[220px] md:max-w-none">
+                        <div className="flex flex-col min-w-0 overflow-hidden">
+                            <span className="text-[7px] md:text-[10px] font-general font-bold uppercase tracking-[0.2em] text-primary mb-0.5 truncate opacity-90">Session Status</span>
+                            <h2 className="text-[11px] md:text-sm font-general font-bold text-foreground truncate max-w-[120px] xs:max-w-[180px] md:max-w-none">
                                 {activeConvId ? conversations.find(c => c.id === activeConvId)?.title || 'Standard Interface' : 'Initialize CALYX'}
                             </h2>
                         </div>
@@ -379,7 +379,7 @@ export default function Chat() {
                                                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                                className="absolute right-0 mt-3 w-56 md:w-64 liquid-glass rounded-2xl py-3 z-50 border border-white/10 shadow-2xl overflow-hidden"
+                                                className="absolute right-0 mt-3 w-48 md:w-64 liquid-glass rounded-2xl py-2 md:py-3 z-50 border border-white/10 shadow-2xl overflow-hidden"
                                             >
                                                 <div className="px-5 py-3 border-b border-white/5 mb-2">
                                                     <p className="text-[11px] md:text-sm font-bold text-foreground truncate">{user.name}</p>
