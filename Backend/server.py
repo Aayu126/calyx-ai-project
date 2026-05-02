@@ -616,9 +616,6 @@ def auth_google():
 
 @app.route("/api/auth/google/callback", methods=["GET"])
 def auth_google_callback():
-    import urllib.request
-    import urllib.parse
-
     code = request.args.get("code")
     # Recover the frontend origin from the state parameter
     state = request.args.get("state", "")
@@ -653,8 +650,17 @@ def auth_google_callback():
         token_resp = requests.post("https://oauth2.googleapis.com/token", data=token_data)
         
         if not token_resp.ok:
-            print(f"[ERROR] Token exchange failed: {token_resp.text}")
-            return redirect(f"{frontend_origin}/signin?error=google_auth_failed&details=token_exchange")
+            error_text = token_resp.text
+            print(f"[ERROR] Token exchange failed: {error_text}")
+            try:
+                error_json = token_resp.json()
+                google_error = error_json.get('error_description') or error_json.get('error') or "token_exchange_failed"
+            except:
+                google_error = "token_exchange_failed"
+            
+            # Pass the actual Google error back to the frontend for visibility
+            from urllib.parse import quote
+            return redirect(f"{frontend_origin}/signin?error=google_auth_failed&details={quote(google_error)}")
 
         token_json = token_resp.json()
         access_token = token_json.get("access_token")
