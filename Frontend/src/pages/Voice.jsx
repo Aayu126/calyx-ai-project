@@ -149,16 +149,12 @@ function VoiceContent() {
         recognition.onend = () => {
             setListening(false)
             if (isRecordingRef.current) {
-                setTimeout(() => {
-                    if (isRecordingRef.current && recognitionRef.current === recognition) {
-                        try {
-                            recognition.start()
-                            setListening(true)
-                        } catch(err) {
-                            console.warn("Recognition restart failed:", err)
-                        }
-                    }
-                }, 50);
+                try {
+                    recognition.start()
+                    setListening(true)
+                } catch(err) {
+                    console.warn("Recognition restart failed:", err)
+                }
             }
         }
 
@@ -238,10 +234,10 @@ function VoiceContent() {
             setTtsError('')
             transcriptRef.current = ''
             
-            await unlockAudioContext()
-            
             setIsRecording(true)
             isRecordingRef.current = true
+
+            unlockAudioContext()
 
             if (recognitionRef.current) {
                 try {
@@ -256,9 +252,7 @@ function VoiceContent() {
                     audio: {
                         echoCancellation: true,
                         noiseSuppression: true,
-                        autoGainControl: true,
-                        channelCount: 1,
-                        sampleRate: 16000
+                        autoGainControl: true
                     } 
                 })
                 streamRef.current = stream
@@ -275,21 +269,18 @@ function VoiceContent() {
                     mimeType = 'audio/ogg'
                 }
                 
-                const options = mimeType ? { mimeType, audioBitsPerSecond: 128000 } : { audioBitsPerSecond: 128000 }
-                const mediaRecorder = new MediaRecorder(stream, options)
+                const mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined)
                 chunksRef.current = []
 
                 mediaRecorder.ondataavailable = (e) => {
                     if (e.data.size > 0) chunksRef.current.push(e.data)
                 }
                 
-                mediaRecorder.onstop = async () => {
+                mediaRecorder.onstop = () => {
                     const audioBlob = new Blob(chunksRef.current, { type: mimeType || 'audio/webm' })
-
-                    try {
-                        const lang = selectedLangRef.current
-                        const data = await transcribeAudio(audioBlob, lang)
-                        if (data.text && data.text.trim().length > 0) {
+                    const lang = selectedLangRef.current
+                    transcribeAudio(audioBlob, lang).then((data) => {
+                        if (data && data.text && data.text.trim().length > 0) {
                             const clean = data.text.trim()
                             const prev = transcriptRef.current
                             if (!prev || clean.length > prev.length) {
@@ -297,12 +288,12 @@ function VoiceContent() {
                                 transcriptRef.current = clean
                             }
                         }
-                    } catch (err) {
+                    }).catch((err) => {
                         console.error("Backend transcription failed:", err)
-                    }
+                    })
                 }
 
-                mediaRecorder.start(500)
+                mediaRecorder.start(1000)
                 mediaRecorderRef.current = mediaRecorder
             } catch (err) {
                 console.error("Microphone access error:", err)
