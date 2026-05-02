@@ -98,8 +98,8 @@ JWT_SECRET = os.environ.get("JWT_SECRET", secrets.token_hex(32))
 JWT_EXPIRY_HOURS = 72
 
 # OAuth config (set in .env or environment)
-GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
-GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "").strip()
 GITHUB_CLIENT_ID = os.environ.get("GITHUB_CLIENT_ID", "")
 GITHUB_CLIENT_SECRET = os.environ.get("GITHUB_CLIENT_SECRET", "")
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://calyx-ai-project.vercel.app")
@@ -637,6 +637,7 @@ def auth_google_callback():
     redirect_uri = f"{base_url}/api/auth/google/callback"
 
     # Exchange code for tokens
+    print(f"[DEBUG] Using Client ID length: {len(GOOGLE_CLIENT_ID)}, Client Secret length: {len(GOOGLE_CLIENT_SECRET)}")
     try:
         token_data = {
             "code": code,
