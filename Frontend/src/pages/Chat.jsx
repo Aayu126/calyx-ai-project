@@ -19,7 +19,7 @@ export default function Chat() {
     const [messages, setMessages] = useState(INITIAL_MESSAGES)
     const [input, setInput] = useState('')
     const [isTyping, setIsTyping] = useState(false)
-    const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768)
+    const [sidebarOpen, setSidebarOpen] = useState(false) // Start closed on mobile
 
     // Conversation state
     const [conversations, setConversations] = useState([])
@@ -330,17 +330,17 @@ export default function Chat() {
             {/* Main Chat Area */}
             <div className="flex-1 flex flex-col min-w-0 relative z-10 h-full overflow-hidden">
                 {/* Top Bar */}
-                <header className="h-16 md:h-20 flex items-center justify-between px-4 md:px-8 bg-background/80 backdrop-blur-xl border-b border-white/5 shrink-0 z-20">
-                    <div className="flex items-center gap-3 md:gap-6 min-w-0">
+                <header className="h-14 md:h-20 flex items-center justify-between px-3 md:px-8 bg-background/80 backdrop-blur-xl border-b border-white/5 shrink-0 z-20">
+                    <div className="flex items-center gap-2 md:gap-6 min-w-0 flex-1">
                         <button 
                             onClick={() => setSidebarOpen(!sidebarOpen)} 
-                            className="w-9 h-9 md:w-11 md:h-11 shrink-0 flex items-center justify-center rounded-lg md:rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                            className="w-8 h-8 md:w-11 md:h-11 shrink-0 flex items-center justify-center rounded-lg md:rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
                         >
-                            <span className="material-icons text-hero-sub text-lg md:text-xl">{sidebarOpen ? 'menu_open' : 'menu'}</span>
+                            <span className="material-icons text-hero-sub text-base md:text-xl">{sidebarOpen ? 'menu_open' : 'menu'}</span>
                         </button>
                         <div className="flex flex-col min-w-0 overflow-hidden">
-                            <span className="text-[7px] md:text-[10px] font-general font-bold uppercase tracking-[0.2em] text-primary mb-0.5 truncate opacity-90">Session Status</span>
-                            <h2 className="text-[11px] md:text-sm font-general font-bold text-foreground truncate max-w-[120px] xs:max-w-[180px] md:max-w-none">
+                            <span className="text-[6px] md:text-[10px] font-general font-bold uppercase tracking-[0.2em] text-primary mb-0.5 truncate opacity-90">Session Status</span>
+                            <h2 className="text-[10px] md:text-sm font-general font-bold text-foreground truncate max-w-[100px] xs:max-w-[150px] md:max-w-none">
                                 {activeConvId ? conversations.find(c => c.id === activeConvId)?.title || 'Standard Interface' : 'Initialize CALYX'}
                             </h2>
                         </div>
@@ -483,8 +483,8 @@ export default function Chat() {
                                 </div>
 
                                 {/* Bubble */}
-                                <div className={`max-w-[85%] md:max-w-[80%] lg:max-w-[75%] space-y-2 min-w-0 ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                                    <div className={`relative p-4 md:p-6 rounded-[22px] md:rounded-[32px] text-[13.5px] md:text-[15px] leading-relaxed font-geist transition-all duration-300 ${
+                                <div className={`max-w-[88%] md:max-w-[80%] lg:max-w-[75%] space-y-1.5 md:space-y-2 min-w-0 ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                                    <div className={`relative p-3.5 md:p-6 rounded-[18px] md:rounded-[32px] text-[13px] md:text-[15px] leading-relaxed font-geist transition-all duration-300 ${
                                         msg.role === 'user'
                                         ? 'bg-primary text-white shadow-2xl shadow-primary/10 rounded-tr-sm'
                                         : 'liquid-glass text-foreground border border-white/10 rounded-tl-sm shadow-[0_8px_32px_rgba(0,0,0,0.2)]'

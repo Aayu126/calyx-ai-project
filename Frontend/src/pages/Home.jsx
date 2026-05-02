@@ -70,19 +70,18 @@ export default function Home() {
     }, [])
 
     return (
-        <main className="relative min-h-screen flex flex-col overflow-hidden bg-background text-foreground font-geist cursor-none">
+        <main className="relative min-h-screen flex flex-col overflow-x-hidden bg-[#050505] text-foreground font-geist cursor-none selection:bg-primary/30 selection:text-white">
             {/* Custom Interactive Cursor */}
             <motion.div
-                className="fixed w-8 h-8 rounded-full border border-primary/50 pointer-events-none z-[100] mix-blend-difference"
+                className="fixed w-8 h-8 rounded-full border border-primary/50 pointer-events-none z-[100] mix-blend-difference hidden md:block"
                 animate={{
                     x: mousePos.x - 16,
                     y: mousePos.y - 16,
-                    scale: 1,
                 }}
                 transition={{ type: "spring", damping: 30, stiffness: 200, mass: 0.5 }}
             />
             <motion.div
-                className="fixed w-1.5 h-1.5 rounded-full bg-white pointer-events-none z-[100]"
+                className="fixed w-1.5 h-1.5 rounded-full bg-white pointer-events-none z-[100] hidden md:block"
                 animate={{
                     x: mousePos.x - 3,
                     y: mousePos.y - 3,
@@ -90,40 +89,24 @@ export default function Home() {
                 transition={{ type: "spring", damping: 20, stiffness: 300, mass: 0.2 }}
             />
 
-            {/* Background Video Wrapper */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <video
-                    ref={videoRef}
-                    className="absolute inset-0 w-full h-full object-cover"
-                    src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260328_065045_c44942da-53c6-4804-b734-f9e07fc22e08.mp4"
-                    muted
-                    playsInline
-                    autoPlay
-                    style={{ opacity }}
-                />
-            </div>
-
-            {/* Blurred Overlay Shape */}
-            <div 
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[984px] h-[527px] opacity-80 bg-gray-950 blur-[120px] pointer-events-none z-0"
-            />
-
-            {/* Interactive Particle Field */}
-            <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-                {[...Array(30)].map((_, i) => (
+            {/* Cinematic Background Layer */}
+            <div className="fixed inset-0 z-0 pointer-events-none">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(19,127,236,0.08),transparent_70%)]" />
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:100px_100px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
+                
+                {/* Floating Data Clusters */}
+                {[...Array(5)].map((_, i) => (
                     <motion.div
                         key={i}
-                        className="absolute w-1 h-1 bg-white/20 rounded-full"
+                        className="absolute w-[400px] h-[400px] bg-primary/5 blur-[120px] rounded-full"
                         animate={{
-                            x: [Math.random() * 1000 - 500, Math.random() * 1000 - 500],
-                            y: [Math.random() * 1000 - 500, Math.random() * 1000 - 500],
-                            opacity: [0.1, 0.4, 0.1],
-                            scale: [1, 2, 1],
+                            x: [0, 100, -100, 0],
+                            y: [0, -50, 50, 0],
                         }}
                         transition={{
-                            duration: 15 + Math.random() * 25,
+                            duration: 20 + i * 5,
                             repeat: Infinity,
-                            ease: "linear",
+                            ease: "easeInOut"
                         }}
                         style={{
                             left: `${Math.random() * 100}%`,
@@ -133,33 +116,57 @@ export default function Home() {
                 ))}
             </div>
 
-            {/* Hero Content Wrapper */}
-            <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 overflow-visible">
+            {/* Background Video Layer */}
+            <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none opacity-40">
+                <video
+                    ref={videoRef}
+                    className="absolute inset-0 w-full h-full object-cover grayscale opacity-20"
+                    src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260328_065045_c44942da-53c6-4804-b734-f9e07fc22e08.mp4"
+                    muted
+                    playsInline
+                    autoPlay
+                    style={{ opacity }}
+                />
+            </div>
+
+            {/* Hero Content Section */}
+            <section className="relative z-10 flex-1 flex flex-col items-center justify-center pt-32 pb-20 px-6">
                 <motion.div 
                     initial="hidden"
                     animate="visible"
-                    className="text-center"
+                    className="text-center w-full max-w-7xl mx-auto"
                 >
                     <motion.div
                         variants={{
                             hidden: { opacity: 0 },
                             visible: {
                                 opacity: 1,
-                                transition: { staggerChildren: 0.15 }
+                                transition: { staggerChildren: 0.2 }
                             }
                         }}
                         className="flex flex-col items-center"
                     >
+                        {/* Status Badge */}
+                        <motion.div
+                            variants={{
+                                hidden: { opacity: 0, y: 20 },
+                                visible: { opacity: 1, y: 0 }
+                            }}
+                            className="mb-8 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md flex items-center gap-2.5"
+                        >
+                            <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--primary-rgb),0.8)]" />
+                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-foreground/60">Neural Engine v4.0 Active</span>
+                        </motion.div>
+
                         <motion.h1 
                             variants={{
-                                hidden: { opacity: 0, y: 60, filter: 'blur(20px)' },
-                                visible: { opacity: 1, y: 0, filter: 'blur(0px)' }
+                                hidden: { opacity: 0, scale: 0.9, filter: 'blur(20px)' },
+                                visible: { opacity: 1, scale: 1, filter: 'blur(0px)' }
                             }}
-                            transition={{ duration: 1.2, ease: [0.23, 1, 0.32, 1] }}
-                            className="text-[75px] xs:text-[110px] md:text-[210px] font-normal leading-[0.9] tracking-[-0.05em] font-general mb-6 relative group cursor-default"
+                            transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+                            className="text-[14vw] sm:text-[120px] md:text-[180px] font-normal leading-[0.85] tracking-[-0.06em] font-general mb-10 relative cursor-default"
                         >
-                            CALYX <span className="bg-clip-text text-transparent bg-gradient-to-tr from-[#6366f1] via-[#a855f7] to-[#fcd34d] animate-gradient-xy">AI</span>
-                            <div className="absolute -inset-10 bg-primary/20 blur-[120px] -z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                            CALYX <span className="bg-clip-text text-transparent bg-gradient-to-tr from-primary via-blue-400 to-emerald-400 animate-gradient-xy">AI</span>
                         </motion.h1>
                         
                         <motion.p 
@@ -168,84 +175,91 @@ export default function Home() {
                                 visible: { opacity: 1, y: 0 }
                             }}
                             transition={{ duration: 1, delay: 0.4 }}
-                            className="text-hero-sub text-base md:text-2xl leading-relaxed max-w-3xl mx-auto opacity-50 font-geist tracking-widest mt-4 uppercase"
+                            className="text-foreground/40 text-xs sm:text-sm md:text-xl leading-relaxed max-w-2xl mx-auto font-geist tracking-[0.15em] mt-2 uppercase font-medium"
                         >
-                            The next evolution of machine intelligence.<br className="hidden md:block" /> 
-                            Optimized for high-performance talent acquisition.
+                            Orchestrating the next frontier of<br className="hidden sm:block" /> 
+                            autonomous digital intelligence.
                         </motion.p>
 
                         <motion.div
                             variants={{
-                                hidden: { opacity: 0, scale: 0.95 },
-                                visible: { opacity: 1, scale: 1 }
+                                hidden: { opacity: 0, y: 30 },
+                                visible: { opacity: 1, y: 0 }
                             }}
-                            transition={{ duration: 0.8, delay: 0.8 }}
-                            className="mt-16 relative group"
+                            transition={{ duration: 0.8, delay: 1 }}
+                            className="mt-16 flex flex-col sm:flex-row items-center gap-6"
                         >
-                            <div className="absolute -inset-6 bg-primary/30 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
                             <Link 
                                 to="/signup" 
-                                className="relative bg-white text-black px-12 py-6 rounded-full font-general font-bold text-xl hover:bg-primary hover:text-white transition-all duration-500 flex items-center gap-4 group/btn overflow-hidden"
+                                className="relative group/btn bg-white text-black px-10 py-5 rounded-full font-general font-bold text-sm uppercase tracking-[0.1em] transition-all duration-500 hover:bg-primary hover:text-white hover:scale-105 active:scale-95 shadow-[0_20px_50px_rgba(255,255,255,0.1)] overflow-hidden"
                             >
-                                <span className="relative z-10">Initialize Session</span>
-                                <motion.span 
-                                    className="material-icons relative z-10"
-                                    animate={{ x: [0, 5, 0] }}
-                                    transition={{ duration: 2, repeat: Infinity }}
-                                >north_east</motion.span>
+                                <span className="relative z-10 flex items-center gap-3">
+                                    Initiate Session
+                                    <span className="material-icons text-lg">arrow_forward</span>
+                                </span>
                                 <div className="absolute inset-0 bg-primary translate-y-full group-hover/btn:translate-y-0 transition-transform duration-500" />
+                            </Link>
+                            
+                            <Link 
+                                to="/chat" 
+                                className="px-8 py-4 rounded-full border border-white/10 hover:border-white/30 text-[11px] font-bold uppercase tracking-widest text-foreground/60 hover:text-foreground transition-all backdrop-blur-sm"
+                            >
+                                View Capabilities
                             </Link>
                         </motion.div>
                     </motion.div>
                 </motion.div>
-            </div>
+            </section>
 
-            {/* Logo Marquee Section */}
-            <div className="relative z-10 w-full pb-20">
-                <div className="max-w-7xl mx-auto flex flex-col items-center gap-12 px-6">
-                    <div className="h-px w-32 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-                    
-                    <div className="flex-1 w-full overflow-hidden relative mask-fade-edges py-6">
-                        <motion.div 
-                            className="flex items-center gap-16 md:gap-24 w-max"
-                            animate={{ x: [0, -1000] }}
-                            transition={{ 
-                                duration: 40, 
-                                repeat: Infinity, 
-                                ease: "linear" 
-                            }}
+            {/* Dynamic Features Grid */}
+            <section className="relative z-10 py-32 px-6 max-w-7xl mx-auto w-full">
+                <div className="grid md:grid-cols-3 gap-8">
+                    {[
+                        { icon: 'auto_awesome', title: 'Generative Core', desc: 'High-fidelity synthesis across text and vision modalities.' },
+                        { icon: 'graphic_eq', title: 'Neural Voice', desc: 'State-of-the-art speech synthesis with emotional nuance.' },
+                        { icon: 'security', title: 'Private Layer', desc: 'Enterprise-grade encryption for all neural interactions.' }
+                    ].map((feature, i) => (
+                        <motion.div
+                            key={i}
+                            initial={{ opacity: 0, y: 40 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: i * 0.2 }}
+                            className="liquid-glass p-8 rounded-[2.5rem] border border-white/5 hover:border-primary/20 transition-colors group cursor-default"
                         >
-                            {[...logos, ...logos, ...logos, ...logos].map((logo, i) => (
-                                <motion.div 
-                                    key={i} 
-                                    whileHover={{ scale: 1.1, y: -8 }}
-                                    className="flex items-center gap-5 group/logo"
-                                >
-                                    <div 
-                                        className="w-14 h-14 md:w-16 md:h-16 rounded-[18px] md:rounded-[24px] flex items-center justify-center text-2xl md:text-3xl font-bold liquid-glass border border-white/10 group-hover/logo:border-white/40 transition-all shadow-2xl relative overflow-hidden"
-                                        style={{ color: logo.color }}
-                                    >
-                                        <div className="absolute inset-0 bg-current opacity-[0.08] rounded-[18px]" />
-                                        <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover/logo:opacity-100 transition-opacity" />
-                                        {/* Glass Shine */}
-                                        <div className="absolute -inset-full bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 -translate-x-full group-hover/logo:translate-x-full transition-transform duration-1000" />
-                                        <span className="relative z-10">{logo.initial}</span>
-                                    </div>
-                                    <span className="text-[10px] md:text-xs font-general font-bold text-hero-sub/60 uppercase tracking-[0.3em] group-hover/logo:text-foreground transition-colors">
-                                        {logo.name}
-                                    </span>
-                                </motion.div>
-                            ))}
+                            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
+                                <span className="material-icons text-primary text-2xl">{feature.icon}</span>
+                            </div>
+                            <h3 className="text-xl font-bold mb-4 font-general">{feature.title}</h3>
+                            <p className="text-foreground/40 text-sm leading-relaxed font-geist">{feature.desc}</p>
                         </motion.div>
-                    </div>
+                    ))}
                 </div>
+            </section>
+
+            {/* Logo Marquee */}
+            <div className="relative z-10 w-full py-32 bg-black/40 backdrop-blur-xl border-y border-white/5 overflow-hidden">
+                <motion.div 
+                    className="flex items-center gap-16 md:gap-32 w-max px-10"
+                    animate={{ x: [0, -1000] }}
+                    transition={{ 
+                        duration: 50, 
+                        repeat: Infinity, 
+                        ease: "linear" 
+                    }}
+                >
+                    {[...logos, ...logos, ...logos].map((logo, i) => (
+                        <div key={i} className="flex items-center gap-6 opacity-30 hover:opacity-100 transition-opacity cursor-none group">
+                            <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center text-xl md:text-2xl font-bold bg-white/5 border border-white/10 group-hover:bg-primary/20 transition-all">
+                                {logo.initial}
+                            </div>
+                            <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.4em] text-foreground/60">{logo.name}</span>
+                        </div>
+                    ))}
+                </motion.div>
             </div>
 
             <style dangerouslySetInnerHTML={{ __html: `
-                .mask-fade-edges {
-                    mask-image: linear-gradient(to right, transparent, black 20%, black 80%, transparent);
-                    -webkit-mask-image: linear-gradient(to right, transparent, black 20%, black 80%, transparent);
-                }
                 @keyframes gradient-xy {
                     0%, 100% { background-position: 0% 50%; }
                     50% { background-position: 100% 50%; }
@@ -256,6 +270,7 @@ export default function Home() {
                 }
             `}} />
         </main>
+
     )
 }
 

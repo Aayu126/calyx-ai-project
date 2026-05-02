@@ -25,7 +25,105 @@ export default function Voice() {
     const [isSupported, setIsSupported] = useState(true)
     const mediaRecorderRef = useRef(null)
     const chunksRef = useRef([])
-    const recognitionRef = useRef(null)
+    const [volume, setVolume] = useState(0)
+    const audioContextRef = useRef(null)
+    const analyserRef = useRef(null)
+    const animationFrameRef = useRef(null)
+
+    // Unlock AudioContext for mobile browsers
+    const unlockAudioContext = async () => {
+        if (!audioContextRef.current) {
+            audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)()
+        }
+        if (audioContextRef.current.state === 'suspended') {
+            await audioContextRef.current.resume()
+        }
+    }
+
+    // Build / rebuild recognition whenever the selected language changes
+    useEffect(() => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            setIsSupported(false)
+            return;
+        }
+
+        // Stop any existing session
+        recognitionRef.current?.abort()
+
+        const recognition = new SpeechRecognition()
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        
+        // Mobile browsers often fail with continuous=true
+        recognition.continuous = !isMobile;
+        recognition.interimResults = true;
+        recognition.lang = selectedLang || 'en-US'
+
+        recognition.onresult = (event) => {
+            let finalChunk = ''
+            let interimChunk = ''
+
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                const result = event.results[i]
+                if (result.isFinal) {
+                    finalChunk += result[0].transcript
+                    if (result[0].lang) setDetectedLang(result[0].lang)
+                } else {
+                    interimChunk += result[0].transcript
+                }
+            }
+
+            if (finalChunk) {
+                setTranscript((prev) => {
+                    const separator = (prev && !prev.endsWith(' ') && !prev.endsWith('.') && !prev.endsWith('\n')) ? ' ' : ''
+                    return prev + separator + finalChunk.trim()
+                })
+                setInterimText('')
+            }
+            if (interimChunk) setInterimText(interimChunk)
+        }
+
+        recognition.onstart = () => {
+            setListening(true);
+            setInterimText('');
+        };
+
+        recognition.onerror = (e) => {
+            console.warn('Speech recognition error:', e.error)
+            if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+                setIsRecording(false)
+                setListening(false)
+            }
+            // Auto-restart logic for mobile
+            if (isRecording && (e.error === 'network' || e.error === 'no-speech')) {
+                setTimeout(() => {
+                    if (isRecording) {
+                        try { recognition.start(); } catch(err) {}
+                    }
+                }, 100);
+            }
+        }
+
+        recognition.onend = () => {
+            if (isRecording) {
+                // On mobile, keep it alive if user hasn't manually stopped
+                setTimeout(() => {
+                    if (isRecording) {
+                        try { recognition.start(); } catch(err) {}
+                    }
+                }, 100);
+            } else {
+                setListening(false)
+                setInterimText('')
+            }
+        }
+
+        recognitionRef.current = recognition
+        
+        return () => {
+            recognition.abort();
+        };
+    }, [selectedLang, isRecording])
 
     // Build / rebuild recognition whenever the selected language changes
     useEffect(() => {
@@ -109,28 +207,58 @@ export default function Voice() {
         };
     }, [selectedLang, isRecording])
 
+    const startVisualizer = (stream) => {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+        const analyser = audioContext.createAnalyser()
+        const source = audioContext.createMediaStreamSource(stream)
+        source.connect(analyser)
+        analyser.fftSize = 256
+        
+        analyserRef.current = analyser
+        audioContextRef.current = audioContext
+
+        const bufferLength = analyser.frequencyBinCount
+        const dataArray = new Uint8Array(bufferLength)
+
+        const updateVolume = () => {
+            if (!isRecording) return
+            analyser.getByteFrequencyData(dataArray)
+            let sum = 0
+            for (let i = 0; i < bufferLength; i++) {
+                sum += dataArray[i]
+            }
+            const average = sum / bufferLength
+            setVolume(average)
+            animationFrameRef.current = requestAnimationFrame(updateVolume)
+        }
+        updateVolume()
+    }
+
     const toggleRecording = async () => {
         if (isRecording) {
             setIsRecording(false)
             setListening(false)
+            setVolume(0)
             recognitionRef.current?.stop()
             mediaRecorderRef.current?.stop()
+            
+            if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
+            if (audioContextRef.current) audioContextRef.current.close()
         } else {
             // Clear previous state
             setTranscript('')
             setInterimText('')
             setDetectedLang('')
+            
+            // Essential for Mobile: Handle AudioContext inside user gesture
+            await unlockAudioContext()
+            
             setIsRecording(true)
 
             // Start live Web Speech API transcription
             if (recognitionRef.current) {
                 try {
-                    // Mobile browsers require a fresh start call in the click handler
-                    // Abort any previous session first to ensure a clean state
                     recognitionRef.current.abort()
-                    
-                    // Small delay to ensure abort finished, but keep it within user interaction window
-                    // Actually, calling start() directly after abort() often works if the browser handles it
                     recognitionRef.current.start()
                 } catch (e) {
                     console.error("Recognition start error:", e)
@@ -140,6 +268,7 @@ export default function Voice() {
             // Also record audio for backend Whisper transcription
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+                startVisualizer(stream)
                 
                 // Detection for mobile-friendly mime types
                 // iOS Safari specifically prefers audio/mp4 or audio/aac
@@ -307,76 +436,83 @@ export default function Voice() {
                                 </AnimatePresence>
                             </div>
 
-                            {/* Mic Button & Control */}
-                            <div className="flex flex-col items-center mb-8 md:mb-10 py-2 md:py-4">
-                                <div className="relative group">
-                                    <AnimatePresence>
-                                        {isRecording && (
-                                            <>
-                                                <motion.div 
-                                                    initial={{ scale: 0.8, opacity: 0 }}
-                                                    animate={{ scale: 1.4, opacity: 0 }}
-                                                    exit={{ scale: 0.8, opacity: 0 }}
-                                                    transition={{ repeat: Infinity, duration: 2 }}
-                                                    className="absolute inset-0 rounded-full bg-primary/20"
-                                                />
-                                                <motion.div 
-                                                    initial={{ scale: 0.8, opacity: 0 }}
-                                                    animate={{ scale: 1.8, opacity: 0 }}
-                                                    exit={{ scale: 0.8, opacity: 0 }}
-                                                    transition={{ repeat: Infinity, duration: 2, delay: 0.5 }}
-                                                    className="absolute inset-0 rounded-full bg-primary/10"
-                                                />
-                                            </>
-                                        )}
-                                    </AnimatePresence>
-                                    <button
-                                        onClick={toggleRecording}
-                                        className={`relative w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center transition-all duration-500 z-10 ${
-                                            isRecording
-                                            ? 'bg-red-500 shadow-[0_0_40px_rgba(239,68,68,0.4)] scale-110'
-                                            : 'bg-primary shadow-[0_0_30px_rgba(19,127,236,0.3)] hover:scale-105 active:scale-95'
-                                        }`}
-                                    >
-                                        <span className="material-icons text-white text-3xl md:text-4xl">
-                                            {isRecording ? 'stop' : 'mic'}
-                                        </span>
-                                    </button>
-                                </div>
-                                <p className="text-xs md:text-sm text-foreground/40 mt-6 md:mt-8 font-geist text-center">
-                                    {isRecording 
-                                        ? (listening ? 'Listening to voice signals...' : 'Initializing audio stream...') 
-                                        : 'Click to start neural transcription'
-                                    }
-                                </p>
-                            </div>
+                                    {/* Mic Button & Control */}
+                                    <div className="flex flex-col items-center mb-8 md:mb-10 py-2 md:py-4">
+                                        <div className="relative group flex items-center justify-center">
+                                            <AnimatePresence>
+                                                {isRecording && (
+                                                    <>
+                                                        <motion.div 
+                                                            className="absolute w-32 h-32 md:w-40 md:h-40 rounded-full border border-primary/20"
+                                                            animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
+                                                            transition={{ repeat: Infinity, duration: 1.5, ease: "easeOut" }}
+                                                        />
+                                                        {/* Volume Visualizer Rings */}
+                                                        <motion.div 
+                                                            className="absolute w-24 h-24 md:w-32 md:h-32 rounded-full border-2 border-primary/40"
+                                                            animate={{ scale: 1 + (volume / 100) }}
+                                                            transition={{ type: "spring", damping: 15, stiffness: 200 }}
+                                                        />
+                                                    </>
+                                                )}
+                                            </AnimatePresence>
+                                            
+                                            <button
+                                                onClick={toggleRecording}
+                                                className={`relative w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center transition-all duration-500 z-10 ${
+                                                    isRecording
+                                                    ? 'bg-red-500 shadow-[0_0_40px_rgba(239,68,68,0.4)] scale-110'
+                                                    : 'bg-primary shadow-[0_0_30px_rgba(19,127,236,0.3)] hover:scale-105 active:scale-95'
+                                                }`}
+                                            >
+                                                <span className="material-icons text-white text-3xl md:text-4xl">
+                                                    {isRecording ? 'stop' : 'mic'}
+                                                </span>
+                                            </button>
+                                        </div>
+                                        <p className="text-xs md:text-sm text-foreground/40 mt-6 md:mt-8 font-geist text-center px-4">
+                                            {isRecording 
+                                                ? (listening ? 'Listening to neural signals...' : 'Calibrating audio sensors...') 
+                                                : 'Tap the sensor to initiate voice capture'
+                                            }
+                                        </p>
+                                    </div>
 
-                            {/* Transcription Box */}
-                            <div className="relative group">
-                                <div className="absolute inset-0 bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl" />
-                                <div className="relative min-h-[140px] md:min-h-[160px] bg-white/[0.02] rounded-[1.25rem] md:rounded-[1.5rem] p-5 md:p-6 border border-white/[0.08] font-geist">
-                                    {isRecording && listening && (
-                                        <div className="absolute top-4 right-4 flex gap-1 h-3 items-center">
-                                            {[...Array(4)].map((_, i) => (
+                                    {/* Waveform Visualizer */}
+                                    {isRecording && (
+                                        <div className="flex items-center justify-center gap-1 h-8 mb-8">
+                                            {[...Array(12)].map((_, i) => (
                                                 <motion.div
                                                     key={i}
-                                                    animate={{ height: [2, 10, 2] }}
-                                                    transition={{ repeat: Infinity, duration: 0.6, delay: i * 0.1 }}
-                                                    className="w-0.5 bg-primary rounded-full"
+                                                    className="w-1 bg-primary/60 rounded-full"
+                                                    animate={{ 
+                                                        height: [4, Math.max(4, volume * (0.3 + Math.random() * 0.7)), 4],
+                                                        opacity: [0.3, 0.8, 0.3]
+                                                    }}
+                                                    transition={{ 
+                                                        repeat: Infinity, 
+                                                        duration: 0.2 + (i * 0.05),
+                                                        ease: "easeInOut"
+                                                    }}
                                                 />
                                             ))}
                                         </div>
                                     )}
-                                    {(transcript || interimText) ? (
-                                        <div className="text-sm md:text-base leading-relaxed text-foreground/90">
-                                            {transcript}
-                                            {interimText && (
-                                                <span className="text-primary/60 italic ml-1 transition-opacity duration-300">
-                                                    {interimText}
-                                                </span>
-                                            )}
-                                        </div>
-                                    ) : (
+
+                                    {/* Transcription Box */}
+                                    <div className="relative group">
+                                        <div className={`absolute -inset-[1px] bg-gradient-to-r from-primary/20 via-blue-500/20 to-emerald-500/20 blur-[2px] rounded-[1.5rem] transition-opacity duration-500 ${isRecording ? 'opacity-100' : 'opacity-0'}`} />
+                                        <div className="relative min-h-[140px] md:min-h-[160px] bg-white/[0.02] rounded-[1.25rem] md:rounded-[1.5rem] p-5 md:p-6 border border-white/[0.08] font-geist backdrop-blur-sm">
+                                            {(transcript || interimText) ? (
+                                                <div className="text-sm md:text-base leading-relaxed text-foreground/90">
+                                                    {transcript}
+                                                    {interimText && (
+                                                        <span className="text-primary/60 italic ml-1 transition-opacity duration-300">
+                                                            {interimText}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ) : (
                                         <div className="flex flex-col items-center justify-center h-full text-foreground/20 italic text-sm text-center py-4">
                                             <span className="material-icons text-2xl md:text-3xl mb-3 opacity-20">notes</span>
                                             {isRecording ? 'Processing voice signals...' : 'Your transcription will emerge here'}
