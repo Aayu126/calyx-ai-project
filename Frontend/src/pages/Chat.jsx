@@ -212,25 +212,25 @@ export default function Chat() {
 
             {/* Left Sidebar */}
             <aside 
-                className={`fixed md:relative top-0 left-0 h-full z-40 transition-all duration-500 ease-in-out flex flex-col border-r border-white/5 bg-[#050505]/95 backdrop-blur-2xl md:bg-black/20 ${
+                className={`fixed md:relative top-0 left-0 h-full z-40 transition-all duration-500 ease-in-out flex flex-col border-r border-white/5 bg-[#080808] md:bg-black/20 backdrop-blur-2xl ${
                     sidebarOpen ? 'w-64 md:w-72 translate-x-0' : 'w-0 -translate-x-full md:translate-x-0 md:w-0'
-                }`}
+                } overflow-hidden`}
             >
-                <div className="p-4 md:p-6">
-                    <div className="flex items-center justify-between mb-6 md:mb-8">
-                        <Link to="/" className="flex items-center gap-2 md:gap-3 group">
+                <div className="p-4 md:p-6 flex flex-col gap-4 md:gap-6">
+                    <div className="flex items-center justify-between">
+                        <Link to="/" className="flex items-center gap-2 md:gap-3 group shrink-0">
                             <img 
                                 src="/logo.png" 
                                 alt="CALYX" 
                                 className="w-6 h-6 md:w-8 md:h-8 object-contain"
                             />
-                            <span className="font-general font-bold tracking-tighter text-lg md:text-xl text-foreground">CALYX</span>
+                            <span className="font-general font-bold tracking-tighter text-base md:text-xl text-foreground">CALYX</span>
                         </Link>
                         <button 
                             onClick={() => setSidebarOpen(false)}
-                            className="md:hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10"
+                            className="md:hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 shrink-0"
                         >
-                            <span className="material-icons text-hero-sub text-xl">close</span>
+                            <span className="material-icons text-hero-sub text-lg">close</span>
                         </button>
                     </div>
                     <motion.button
@@ -240,10 +240,10 @@ export default function Chat() {
                             handleNewChat()
                             if (window.innerWidth < 768) setSidebarOpen(false)
                         }}
-                        className="w-full bg-primary text-white font-general font-bold text-[10px] md:text-xs uppercase tracking-widest py-3 md:py-3.5 rounded-xl md:rounded-2xl transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
+                        className="w-full bg-primary text-white font-general font-bold text-[9px] md:text-xs uppercase tracking-[0.15em] py-3 md:py-3.5 rounded-xl md:rounded-2xl transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
                     >
                         <span className="material-icons text-sm md:text-base">add</span>
-                        New Chat
+                        New Interaction
                     </motion.button>
                 </div>
 
@@ -330,18 +330,18 @@ export default function Chat() {
             {/* Main Chat Area */}
             <div className="flex-1 flex flex-col min-w-0 relative z-10 h-full overflow-hidden">
                 {/* Top Bar */}
-                <header className="h-14 md:h-20 flex items-center justify-between px-4 md:px-8 bg-background/50 backdrop-blur-md border-b border-white/5">
-                    <div className="flex items-center gap-2 md:gap-6 overflow-hidden">
+                <header className="h-16 md:h-20 flex items-center justify-between px-4 md:px-8 bg-background/80 backdrop-blur-xl border-b border-white/5 shrink-0 z-20">
+                    <div className="flex items-center gap-3 md:gap-6 min-w-0">
                         <button 
                             onClick={() => setSidebarOpen(!sidebarOpen)} 
-                            className="w-8 h-8 md:w-10 md:h-10 shrink-0 flex items-center justify-center rounded-lg md:rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                            className="w-9 h-9 md:w-11 md:h-11 shrink-0 flex items-center justify-center rounded-lg md:rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
                         >
                             <span className="material-icons text-hero-sub text-lg md:text-xl">{sidebarOpen ? 'menu_open' : 'menu'}</span>
                         </button>
                         <div className="flex flex-col min-w-0">
-                            <span className="text-[7px] md:text-[10px] font-general font-bold uppercase tracking-[0.2em] text-primary mb-0.5 truncate">Active Session</span>
-                            <h2 className="text-[10px] md:text-sm font-general font-bold text-foreground truncate">
-                                {activeConvId ? conversations.find(c => c.id === activeConvId)?.title || 'Standard Chat' : 'New Interaction'}
+                            <span className="text-[7px] md:text-[9px] font-general font-bold uppercase tracking-[0.2em] text-primary mb-0.5 truncate opacity-80">System Action</span>
+                            <h2 className="text-[11px] md:text-sm font-general font-bold text-foreground truncate max-w-[120px] xs:max-w-[200px] md:max-w-none">
+                                {activeConvId ? conversations.find(c => c.id === activeConvId)?.title || 'Standard Chat' : 'Initialize Interface'}
                             </h2>
                         </div>
                     </div>
@@ -527,7 +527,7 @@ export default function Chat() {
                     <div className="max-w-4xl mx-auto relative group">
                         <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-[20px] md:rounded-[32px] blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
                         
-                        <div className="relative liquid-glass rounded-[18px] md:rounded-[32px] border border-white/10 p-1 md:p-2 flex items-center gap-1 md:gap-2 shadow-2xl">
+                        <div className="relative liquid-glass rounded-[22px] md:rounded-[32px] border border-white/10 p-1.5 md:p-2 flex items-center gap-2 shadow-2xl">
                             <button className="hidden sm:flex w-10 md:w-12 h-10 md:h-12 items-center justify-center rounded-xl md:rounded-2xl hover:bg-white/5 transition-colors text-hero-sub hover:text-foreground shrink-0">
                                 <span className="material-icons text-xl">add_circle_outline</span>
                             </button>
@@ -542,19 +542,19 @@ export default function Chat() {
                                     }
                                 }}
                                 rows={1}
-                                className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-[13px] md:text-sm text-foreground placeholder-hero-sub py-2 md:py-3 px-2 md:px-3 resize-none font-geist max-h-40"
-                                placeholder="Message CALYX AI..."
+                                className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-[13px] md:text-sm text-white placeholder-hero-sub/50 py-2.5 md:py-3 px-2 md:px-3 resize-none font-geist max-h-40 min-w-0"
+                                placeholder="Command CALYX..."
                             />
-                            <div className="flex items-center gap-1 pr-1 md:pr-2 shrink-0">
-                                <Link to="/voice" className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-lg md:rounded-2xl hover:bg-white/5 transition-colors text-hero-sub hover:text-foreground">
-                                    <span className="material-icons text-xl">mic_none</span>
+                            <div className="flex items-center gap-1.5 md:gap-2 pr-1 md:pr-2 shrink-0">
+                                <Link to="/voice" className="w-9 h-9 md:w-11 md:h-11 flex items-center justify-center rounded-lg md:rounded-2xl hover:bg-white/5 transition-colors text-hero-sub hover:text-foreground">
+                                    <span className="material-icons text-lg md:text-xl">mic_none</span>
                                 </Link>
                                 <motion.button
                                     whileHover={input.trim() ? { scale: 1.05 } : {}}
                                     whileTap={input.trim() ? { scale: 0.95 } : {}}
                                     onClick={handleSend}
                                     disabled={!input.trim()}
-                                    className={`w-8 h-8 md:w-12 md:h-12 flex items-center justify-center rounded-lg md:rounded-2xl transition-all ${
+                                    className={`w-9 h-9 md:w-11 md:h-11 flex items-center justify-center rounded-lg md:rounded-2xl transition-all ${
                                         input.trim()
                                         ? 'bg-primary text-white shadow-lg shadow-primary/30'
                                         : 'bg-white/5 text-white/20 cursor-not-allowed'
