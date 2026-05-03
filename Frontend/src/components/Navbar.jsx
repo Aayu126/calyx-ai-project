@@ -161,7 +161,33 @@ export default function Navbar() {
                                     {item.label}
                                 </Link>
                             ))}
-                            {!user && (
+                            {user ? (
+                                <div className="flex flex-col gap-4 pt-3 border-t border-white/5">
+                                    <div className="px-4 py-2 bg-white/5 rounded-2xl border border-white/10">
+                                        <div className="flex items-center gap-3 mb-1">
+                                            {user.picture ? (
+                                                <img src={user.picture} alt="" className="w-6 h-6 rounded-full" />
+                                            ) : (
+                                                <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+                                                    <span className="material-icons text-[10px] text-primary">person</span>
+                                                </div>
+                                            )}
+                                            <p className="text-[10px] font-bold uppercase tracking-wider text-foreground truncate">{user.name}</p>
+                                        </div>
+                                        <p className="text-[8px] text-foreground/50 truncate pl-9">{user.email}</p>
+                                    </div>
+                                    <button 
+                                        onClick={() => {
+                                            logout();
+                                            setIsMenuOpen(false);
+                                        }}
+                                        className="w-full flex items-center justify-center gap-2 py-3 bg-red-500/10 text-red-400 text-[9px] font-bold uppercase tracking-[0.2em] rounded-xl border border-red-500/20 active:scale-95 transition-all"
+                                    >
+                                        <span className="material-icons text-sm">logout</span>
+                                        Sign Out
+                                    </button>
+                                </div>
+                            ) : (
                                 <div className="flex flex-col gap-2 pt-3 border-t border-white/5">
                                     <Link 
                                         to="/signin" 
