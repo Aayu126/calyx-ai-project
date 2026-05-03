@@ -141,6 +141,16 @@ export async function textToSpeech(text) {
     return res.blob()
 }
 
+// ─── System Control (Jarvis) ─────────────────────────
+export async function sendSystemCommand(command) {
+    const res = await fetch(`${API_URL}/system/command`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ command }),
+    })
+    return res.json()
+}
+
 // ─── Pricing ─────────────────────────────────────────
 export async function getPlans() {
     const res = await fetch(`${API_URL}/plans`, { headers: getHeaders() })

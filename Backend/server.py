@@ -11,6 +11,7 @@ import uuid
 import re
 import secrets
 import threading
+import subprocess
 from datetime import datetime, timedelta
 from functools import wraps
 
@@ -624,6 +625,56 @@ def upload_file():
         return jsonify({"url": url, "name": file.filename})
     except Exception as e:
         print(f"Upload error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+# ── System Control (Jarvis Mode) ──────────────────────────────
+
+@app.route("/api/system/command", methods=["POST"])
+@auth_required
+def system_command():
+    data = request.get_json()
+    command = data.get("command", "").lower().strip()
+    
+    if not command:
+        return jsonify({"error": "No command provided"}), 400
+
+    # Common app mapping for Windows
+    app_map = {
+        "notepad": "notepad.exe",
+        "calculator": "calc.exe",
+        "paint": "mspaint.exe",
+        "chrome": "chrome.exe",
+        "explorer": "explorer.exe",
+        "task manager": "taskmgr.exe",
+        "control panel": "control.exe",
+        "settings": "start ms-settings:",
+        "spotify": "spotify.exe",
+        "discord": "discord.exe",
+        "vscode": "code",
+        "terminal": "wt.exe"
+    }
+
+    try:
+        # Check for direct matches
+        for app_name, exec_name in app_map.items():
+            if app_name in command:
+                if exec_name.startswith("start "):
+                    subprocess.Popen(exec_name, shell=True)
+                else:
+                    subprocess.Popen(exec_name)
+                return jsonify({"ok": True, "message": f"Opening {app_name}"})
+
+        # Generic fallback for 'open X'
+        match = re.search(r"open\s+(.*)", command)
+        if match:
+            app_to_open = match.group(1).strip()
+            # Dangerous if not careful, but for local Jarvis use:
+            subprocess.Popen(f"start {app_to_open}", shell=True)
+            return jsonify({"ok": True, "message": f"Attempting to open {app_to_open}"})
+
+        return jsonify({"error": "Command not recognized or supported locally"}), 404
+    except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 

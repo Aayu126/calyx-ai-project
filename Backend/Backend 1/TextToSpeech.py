@@ -17,12 +17,12 @@ except ImportError:
 # Voice mapping for supported languages - Using premium neural voices
 VOICE_MAP = {
     'en': 'en-US-EmmaNeural',    # Emma sounds very professional and natural
-    'es': 'es-ES-AlvaroNeural',  # Alvaro is a clear Spanish voice
-    'fr': 'fr-FR-EloiseNeural',  # Eloise is a highly rated French voice
-    'de': 'de-DE-KillianNeural', # Killian is a natural German male voice
-    'hi': 'hi-IN-MadhurNeural',  # Madhur is often more natural for Hindi
+    'es': 'es-ES-ElviraNeural',  # Elvira is a clear and natural Spanish female voice
+    'fr': 'fr-FR-EloiseNeural',  # Eloise is a highly rated French female voice
+    'de': 'de-DE-KatjaNeural',   # Katja is a natural German female voice
+    'hi': 'hi-IN-SwaraNeural',   # Swara is a very natural Hindi female voice
     'mr': 'mr-IN-AarohiNeural',  # Aarohi is a clear and natural Marathi female voice
-    'ja': 'ja-JP-KeitaNeural',   # Keita is a natural Japanese voice
+    'ja': 'ja-JP-NanamiNeural',  # Nanami is a natural Japanese female voice
 }
 
 def get_voice_for_text(text):
