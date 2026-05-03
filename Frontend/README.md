@@ -74,7 +74,7 @@ Frontend starts at **<http://localhost:5173>** (or next available port)
 
 | Variable | Local | Production |
 |---|---|---|
-| `VITE_API_URL` | `/api` | `https://calyx-ai-backend.onrender.com/api` |
+| `VITE_API_URL` | `/api` | `https://calyx-ai-backend-wl72.onrender.com/api` |
 
 > In local dev, Vite proxies `/api` calls to `http://localhost:5000` automatically.  
 > In production (Vercel), set `VITE_API_URL` to your Render backend URL in the Vercel dashboard.
@@ -139,7 +139,7 @@ calyx-ai-frontend/
    - **Build Command:** `npm run build`
    - **Output Directory:** `dist`
 5. Add environment variable:
-   - `VITE_API_URL` = `https://calyx-ai-backend.onrender.com/api`
+   - `VITE_API_URL` = `https://calyx-ai-backend-wl72.onrender.com/api`
 6. Click **Deploy** ✅
 
 ### After Deploying — Update Google Cloud Console
