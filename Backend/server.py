@@ -880,13 +880,19 @@ def auth_google_frontend():
 
 @app.route("/api/auth/github", methods=["GET"])
 def auth_github():
+    import urllib.parse
     if not GITHUB_CLIENT_ID:
         return jsonify({"message": "GitHub OAuth not configured. Set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET in environment."}), 503
+
+    # Capture frontend origin
+    frontend_origin = request.args.get("frontend_origin", FRONTEND_URL)
+    state = urllib.parse.quote(frontend_origin, safe="")
 
     github_auth_url = (
         f"https://github.com/login/oauth/authorize?"
         f"client_id={GITHUB_CLIENT_ID}&"
-        f"scope=user:email"
+        f"scope=user:email&"
+        f"state={state}"
     )
     return redirect(github_auth_url)
 
@@ -897,8 +903,15 @@ def auth_github_callback():
     import urllib.parse
 
     code = request.args.get("code")
+    state = request.args.get("state", "")
+    
+    try:
+        frontend_origin = urllib.parse.unquote(state) if state else FRONTEND_URL
+    except:
+        frontend_origin = FRONTEND_URL
+
     if not code:
-        return redirect(f"{FRONTEND_URL}/signin?error=no_code")
+        return redirect(f"{frontend_origin}/signin?error=no_code")
 
     try:
         # Exchange code for access token
@@ -915,7 +928,7 @@ def auth_github_callback():
 
         access_token = token_resp.get("access_token", "")
         if not access_token:
-            return redirect(f"{FRONTEND_URL}/signin?error=no_token")
+            return redirect(f"{frontend_origin}/signin?error=no_token")
 
         # Get user info
         req2 = urllib.request.Request("https://api.github.com/user")
@@ -923,17 +936,21 @@ def auth_github_callback():
         resp2 = urllib.request.urlopen(req2)
         user_info = json.loads(resp2.read())
 
-        # Get email (may need separate request)
+        # Get email
         email = user_info.get("email", "")
         if not email:
-            req3 = urllib.request.Request("https://api.github.com/user/emails")
-            req3.add_header("Authorization", f"token {access_token}")
-            resp3 = urllib.request.urlopen(req3)
-            emails = json.loads(resp3.read())
-            primary = next((e for e in emails if e.get("primary")), None)
-            email = primary["email"] if primary else f"{user_info['login']}@github.com"
+            try:
+                req3 = urllib.request.Request("https://api.github.com/user/emails")
+                req3.add_header("Authorization", f"token {access_token}")
+                resp3 = urllib.request.urlopen(req3)
+                emails = json.loads(resp3.read())
+                primary = next((e for e in emails if e.get("primary")), None)
+                email = primary["email"] if primary else f"{user_info.get('login', 'user')}@github.com"
+            except:
+                email = f"{user_info.get('login', 'user')}@github.com"
 
         name = user_info.get("name") or user_info.get("login", "User")
+        picture = user_info.get("avatar_url", "")
 
         # Find or create user
         users = _load_users()
@@ -941,6 +958,8 @@ def auth_github_callback():
 
         if existing:
             user_id = existing["id"]
+            existing["picture"] = picture # Sync avatar
+            _save_users(users)
         else:
             user_id = str(uuid.uuid4())
             users.append({
@@ -949,16 +968,23 @@ def auth_github_callback():
                 "email": email,
                 "password": "",
                 "provider": "github",
+                "picture": picture,
                 "created_at": datetime.now().isoformat()
             })
             _save_users(users)
 
-        token = _generate_jwt(user_id, email, name)
-        return redirect(f"{FRONTEND_URL}/auth/callback?token={token}&name={urllib.parse.quote(name)}&email={urllib.parse.quote(email)}")
+        token = _generate_jwt(user_id, email, name, picture)
+        params = urllib.parse.urlencode({
+            "token": token,
+            "name": name,
+            "email": email,
+            "picture": picture
+        })
+        return redirect(f"{frontend_origin}/auth/callback?{params}")
 
     except Exception as e:
         print(f"GitHub OAuth error: {e}")
-        return redirect(f"{FRONTEND_URL}/signin?error=oauth_failed")
+        return redirect(f"{frontend_origin}/signin?error=oauth_failed")
 
 
 # ── Pricing Plans ─────────────────────────────────────────────
