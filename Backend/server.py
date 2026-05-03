@@ -307,6 +307,10 @@ def _list_conversations(user_id):
 
 # ── Routes ────────────────────────────────────────────────────
 
+@app.route("/", methods=["GET"])
+def home():
+    return jsonify({"message": "Calyx AI API is running", "health": "/api/health"})
+
 @app.route("/api/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok", "timestamp": datetime.now().isoformat()})
