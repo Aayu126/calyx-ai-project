@@ -21,6 +21,7 @@ export default function Chat() {
     const [isTyping, setIsTyping] = useState(false)
     const [sidebarOpen, setSidebarOpen] = useState(false) // Start closed on mobile
     const [files, setFiles] = useState([])
+    const [copiedMessageId, setCopiedMessageId] = useState(null)
 
     // Conversation state
     const [conversations, setConversations] = useState([])
@@ -521,13 +522,28 @@ export default function Chat() {
 
                                 {/* Bubble */}
                                 <div className={`max-w-[88%] md:max-w-[80%] lg:max-w-[75%] space-y-1.5 md:space-y-2 min-w-0 ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                                    <div className={`relative p-3.5 md:p-6 rounded-[18px] md:rounded-[32px] text-[13px] md:text-[15px] leading-relaxed font-geist transition-all duration-300 ${
+                                    <div className={`relative group p-3.5 md:p-6 rounded-[18px] md:rounded-[32px] text-[13px] md:text-[15px] leading-relaxed font-geist transition-all duration-300 ${
                                         msg.role === 'user'
                                         ? 'bg-primary text-white shadow-2xl shadow-primary/10 rounded-tr-sm'
                                         : 'liquid-glass text-foreground border border-white/10 rounded-tl-sm shadow-[0_8px_32px_rgba(0,0,0,0.2)]'
                                     }`}>
                                         {msg.role === 'assistant' && (
-                                            <div className="absolute -top-1 -left-1 w-2 h-2 bg-primary rounded-full blur-[2px] opacity-50" />
+                                            <>
+                                                <div className="absolute -top-1 -left-1 w-2 h-2 bg-primary rounded-full blur-[2px] opacity-50" />
+                                                <button 
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(msg.content);
+                                                        setCopiedMessageId(activeConvId ? `${activeConvId}-${i}` : i);
+                                                        setTimeout(() => setCopiedMessageId(null), 2000);
+                                                    }}
+                                                    className="absolute top-3 right-3 md:top-4 md:right-4 p-1.5 rounded-lg bg-white/5 border border-white/10 opacity-0 group-hover:opacity-100 transition-all hover:bg-white/10 active:scale-90 z-10"
+                                                    title="Copy response"
+                                                >
+                                                    <span className="material-icons text-[12px] md:text-[16px] text-hero-sub">
+                                                        {copiedMessageId === (activeConvId ? `${activeConvId}-${i}` : i) ? 'check' : 'content_copy'}
+                                                    </span>
+                                                </button>
+                                            </>
                                         )}
                                         {renderContent(msg.content)}
                                     </div>
