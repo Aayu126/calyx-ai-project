@@ -203,10 +203,16 @@ export default function ImageGen() {
                         <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-purple-500/20 to-primary/20 rounded-[32px] md:rounded-[40px] blur-xl opacity-0 group-hover:opacity-100 transition duration-1000" />
                         <div className="relative liquid-glass rounded-[32px] md:rounded-[40px] border border-white/10 p-6 md:p-12 shadow-3xl">
                             <textarea
+                                id="prompt-textarea"
                                 value={prompt}
                                 onChange={(e) => setPrompt(e.target.value)}
                                 placeholder="Describe your vision in detail..."
-                                className="w-full bg-transparent border-none text-xl md:text-3xl font-general font-medium text-foreground placeholder-white/10 focus:ring-0 resize-none min-h-[120px] md:min-h-[140px] mb-6 md:mb-10 scrollbar-hide"
+                                className="w-full bg-transparent border-none text-xl md:text-3xl font-general font-medium text-foreground placeholder-white/10 focus:ring-0 resize-none min-h-[120px] md:min-h-[140px] mb-6 md:mb-10 scrollbar-hide overflow-y-auto transition-all duration-200"
+                                style={{ height: 'auto' }}
+                                onInput={(e) => {
+                                    e.target.style.height = 'auto';
+                                    e.target.style.height = `${Math.min(e.target.scrollHeight, 300)}px`;
+                                }}
                             />
                             
                             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 pt-6 md:pt-10 border-t border-white/5">

@@ -14,3 +14,4 @@ bcrypt
 rich
 gunicorn
 langdetect
+supabase

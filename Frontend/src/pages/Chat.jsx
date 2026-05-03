@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { sendMessage, getConversations, getConversation, createConversation, deleteConversation } from '../services/api'
+import { sendMessage, getConversations, getConversation, createConversation, deleteConversation, uploadFile } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 
 const INITIAL_MESSAGES = [
@@ -20,6 +20,7 @@ export default function Chat() {
     const [input, setInput] = useState('')
     const [isTyping, setIsTyping] = useState(false)
     const [sidebarOpen, setSidebarOpen] = useState(false) // Start closed on mobile
+    const [files, setFiles] = useState([])
 
     // Conversation state
     const [conversations, setConversations] = useState([])
@@ -41,6 +42,14 @@ export default function Chat() {
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }, [messages, isTyping])
+
+    // Auto-expand textarea
+    useEffect(() => {
+        if (inputRef.current) {
+            inputRef.current.style.height = 'auto'
+            inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 160)}px`
+        }
+    }, [input])
 
     // Load conversations on mount
     useEffect(() => {
@@ -120,15 +129,33 @@ export default function Chat() {
     }
 
     const handleSend = async () => {
-        if (!input.trim()) return
-        const userMsg = { role: 'user', content: input, time: 'Just now' }
-        setMessages((prev) => [...prev, userMsg])
+        if (!input.trim() && files.length === 0) return
+        
+        const currentFiles = [...files]
         const currentInput = input
+        
+        // Optimistic UI update
+        const tempContent = currentFiles.length > 0 
+            ? `${currentFiles.map(f => `[File: ${f.name}]`).join(' ')}\n${currentInput}`
+            : currentInput
+        
+        const userMsg = { role: 'user', content: tempContent, time: 'Just now' }
+        setMessages((prev) => [...prev, userMsg])
         setInput('')
+        setFiles([])
         setIsTyping(true)
 
         try {
-            const data = await sendMessage(currentInput, activeConvId)
+            let finalContent = currentInput
+            if (currentFiles.length > 0) {
+                // Upload files first
+                const uploadPromises = currentFiles.map(f => uploadFile(f))
+                const uploadResults = await Promise.all(uploadPromises)
+                const fileLinks = uploadResults.map(r => `[${r.name}](${r.url})`).join(' ')
+                finalContent = `${fileLinks}\n${currentInput}`
+            }
+
+            const data = await sendMessage(finalContent, activeConvId)
             if (data.conversationId && !activeConvId) {
                 setActiveConvId(data.conversationId)
             }
@@ -138,14 +165,24 @@ export default function Chat() {
             ])
             // Refresh conversation list
             if (user) loadConversations()
-        } catch {
+        } catch (error) {
+            console.error('Send error:', error)
             setMessages((prev) => [
                 ...prev,
-                { role: 'assistant', content: "I'm having trouble connecting to the server. Please check that the backend is running.", time: 'Just now' },
+                { role: 'assistant', content: "I'm having trouble uploading files or connecting to the server. Please check your connection.", time: 'Just now' },
             ])
         } finally {
             setIsTyping(false)
         }
+    }
+
+    const handleFileChange = (e) => {
+        const selectedFiles = Array.from(e.target.files)
+        setFiles(prev => [...prev, ...selectedFiles])
+    }
+
+    const removeFile = (index) => {
+        setFiles(prev => prev.filter((_, i) => i !== index))
     }
 
     const renderContent = (content) => {
@@ -539,12 +576,35 @@ export default function Chat() {
                 {/* Input Area */}
                 <div className="p-3 md:p-6 bg-gradient-to-t from-background via-background to-transparent shrink-0">
                     <div className="max-w-4xl mx-auto relative group">
+                        {/* File Preview */}
+                        <AnimatePresence>
+                            {files.length > 0 && (
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 10 }}
+                                    className="flex flex-wrap gap-2 mb-2 p-2 bg-white/5 rounded-2xl border border-white/10"
+                                >
+                                    {files.map((file, idx) => (
+                                        <div key={idx} className="flex items-center gap-2 bg-primary/20 text-primary text-[10px] font-bold px-3 py-1.5 rounded-lg border border-primary/30">
+                                            <span className="material-icons text-sm">description</span>
+                                            <span className="truncate max-w-[100px]">{file.name}</span>
+                                            <button onClick={() => removeFile(idx)} className="hover:text-red-400 transition-colors">
+                                                <span className="material-icons text-sm">close</span>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
                         <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-[20px] md:rounded-[32px] blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
                         
-                        <div className="relative liquid-glass rounded-[22px] md:rounded-[32px] border border-white/10 p-1 md:p-2 flex items-center gap-1 md:gap-2 shadow-2xl">
-                            <button className="hidden sm:flex w-10 md:w-12 h-10 md:h-12 items-center justify-center rounded-xl md:rounded-2xl hover:bg-white/5 transition-colors text-hero-sub hover:text-foreground shrink-0">
+                        <div className="relative liquid-glass rounded-[22px] md:rounded-[32px] border border-white/10 p-1 md:p-2 flex items-end gap-1 md:gap-2 shadow-2xl">
+                            <label className="flex w-10 md:w-12 h-10 md:h-12 items-center justify-center rounded-xl md:rounded-2xl hover:bg-white/5 transition-colors text-hero-sub hover:text-foreground shrink-0 cursor-pointer">
                                 <span className="material-icons text-xl">add_circle_outline</span>
-                            </button>
+                                <input type="file" className="hidden" multiple onChange={handleFileChange} />
+                            </label>
                             <textarea
                                 ref={inputRef}
                                 value={input}
@@ -559,17 +619,17 @@ export default function Chat() {
                                 className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-[14px] md:text-sm text-white placeholder-hero-sub/40 py-3 md:py-3 px-3 md:px-3 resize-none font-geist max-h-40 min-w-0"
                                 placeholder="Command CALYX..."
                             />
-                            <div className="flex items-center gap-1 md:gap-2 pr-1 md:pr-2 shrink-0">
+                            <div className="flex items-center gap-1 md:gap-2 pr-1 md:pr-2 pb-1 md:pb-2 shrink-0">
                                 <Link to="/voice" className="w-10 h-10 md:w-11 md:h-11 flex items-center justify-center rounded-xl md:rounded-2xl hover:bg-white/5 transition-colors text-hero-sub hover:text-foreground">
                                     <span className="material-icons text-xl md:text-xl">mic_none</span>
                                 </Link>
                                 <motion.button
-                                    whileHover={input.trim() ? { scale: 1.05 } : {}}
-                                    whileTap={input.trim() ? { scale: 0.95 } : {}}
+                                    whileHover={(input.trim() || files.length > 0) ? { scale: 1.05 } : {}}
+                                    whileTap={(input.trim() || files.length > 0) ? { scale: 0.95 } : {}}
                                     onClick={handleSend}
-                                    disabled={!input.trim()}
+                                    disabled={!input.trim() && files.length === 0}
                                     className={`w-10 h-10 md:w-11 md:h-11 flex items-center justify-center rounded-xl md:rounded-2xl transition-all ${
-                                        input.trim()
+                                        (input.trim() || files.length > 0)
                                         ? 'bg-primary text-white shadow-lg shadow-primary/30'
                                         : 'bg-white/5 text-white/20 cursor-not-allowed'
                                     }`}

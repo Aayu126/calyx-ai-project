@@ -14,12 +14,26 @@ import threading
 from datetime import datetime, timedelta
 from functools import wraps
 
-# Load environment variables
 try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
     pass
+
+# Supabase Integration
+try:
+    from supabase import create_client, Client
+    SUPABASE_URL = os.environ.get("SUPABASE_URL")
+    SUPABASE_KEY = os.environ.get("SUPABASE_ANON_KEY")
+    if SUPABASE_URL and SUPABASE_KEY:
+        supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        print("[SUCCESS] Supabase client initialized")
+    else:
+        supabase = None
+        print("[WARNING] Supabase credentials missing, falling back to local storage")
+except ImportError:
+    supabase = None
+    print("[WARNING] supabase-py not installed, falling back to local storage")
 
 # ── Paths ─────────────────────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -149,6 +163,13 @@ def sanitize_input(text, max_length=5000):
 
 
 def _load_users():
+    if supabase:
+        try:
+            res = supabase.table("users").select("*").execute()
+            return res.data
+        except Exception as e:
+            print(f"[ERROR] Supabase users fetch failed: {e}")
+    
     if os.path.exists(USERS_FILE):
         with open(USERS_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
@@ -156,6 +177,16 @@ def _load_users():
 
 
 def _save_users(users):
+    if supabase:
+        try:
+            # This is a simplification; in a real app, you'd insert/update individual users
+            # Here we just try to sync the latest user if called during signup
+            if users:
+                latest_user = users[-1]
+                supabase.table("users").upsert(latest_user).execute()
+        except Exception as e:
+            print(f"[ERROR] Supabase users save failed: {e}")
+
     with open(USERS_FILE, "w", encoding="utf-8") as f:
         json.dump(users, f, indent=2, ensure_ascii=False)
 
@@ -214,6 +245,13 @@ def _get_user_conversations_dir(user_id):
 
 
 def _load_conversation(user_id, conv_id):
+    if supabase:
+        try:
+            res = supabase.table("conversations").select("*").eq("id", conv_id).eq("user_id", user_id).single().execute()
+            return res.data
+        except Exception:
+            pass
+
     path = os.path.join(_get_user_conversations_dir(user_id), f"{conv_id}.json")
     if os.path.exists(path):
         with open(path, "r", encoding="utf-8") as f:
@@ -222,12 +260,32 @@ def _load_conversation(user_id, conv_id):
 
 
 def _save_conversation(user_id, conv_data):
+    if supabase:
+        try:
+            data = conv_data.copy()
+            data["user_id"] = user_id
+            supabase.table("conversations").upsert(data).execute()
+        except Exception as e:
+            print(f"[ERROR] Supabase conv save failed: {e}")
+
     path = os.path.join(_get_user_conversations_dir(user_id), f"{conv_data['id']}.json")
     with open(path, "w", encoding="utf-8") as f:
         json.dump(conv_data, f, indent=2, ensure_ascii=False)
 
 
 def _list_conversations(user_id):
+    if supabase:
+        try:
+            res = supabase.table("conversations").select("id", "title", "updatedAt", "messages").eq("user_id", user_id).order("updatedAt", desc=True).execute()
+            return [{
+                "id": c["id"],
+                "title": c.get("title", "Untitled"),
+                "updatedAt": c.get("updatedAt", ""),
+                "messageCount": len(c.get("messages", []))
+            } for c in res.data]
+        except Exception:
+            pass
+
     d = _get_user_conversations_dir(user_id)
     convs = []
     for fname in os.listdir(d):
@@ -519,6 +577,45 @@ def voice_transcribe():
                 
     except Exception as e:
         print(f"Transcription error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/upload", methods=["POST"])
+@auth_required
+def upload_file():
+    if 'file' not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+    
+    file = request.files['file']
+    if not file.filename:
+        return jsonify({"error": "No file selected"}), 400
+
+    if not supabase:
+        # Fallback: save locally
+        upload_dir = os.path.join(DATA_DIR, "uploads")
+        os.makedirs(upload_dir, exist_ok=True)
+        file_ext = os.path.splitext(file.filename)[1]
+        filename = f"{uuid.uuid4()}{file_ext}"
+        filepath = os.path.join(upload_dir, filename)
+        file.save(filepath)
+        # In a real app, you'd serve this via a route or static files
+        return jsonify({"url": f"/uploads/{filename}", "name": file.filename})
+
+    try:
+        # Upload to Supabase Storage
+        file_ext = os.path.splitext(file.filename)[1]
+        filename = f"{uuid.uuid4()}{file_ext}"
+        bucket = "uploads" # Assume this bucket exists
+        
+        # Read file content
+        content = file.read()
+        res = supabase.storage.from_(bucket).upload(filename, content)
+        
+        # Get public URL
+        url = supabase.storage.from_(bucket).get_public_url(filename)
+        return jsonify({"url": url, "name": file.filename})
+    except Exception as e:
+        print(f"Upload error: {e}")
         return jsonify({"error": str(e)}), 500
 
 

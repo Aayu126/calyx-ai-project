@@ -152,3 +152,17 @@ export function getGitHubAuthUrl(frontendOrigin) {
     const baseUrl = `${API_URL}/auth/github`
     return frontendOrigin ? `${baseUrl}?frontend_origin=${encodeURIComponent(frontendOrigin)}` : baseUrl
 }
+
+// ─── File Upload ─────────────────────────────────────
+export async function uploadFile(file) {
+    const formData = new FormData()
+    formData.append('file', file)
+    const token = localStorage.getItem('calyx_token')
+    const res = await fetch(`${API_URL}/upload`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+    })
+    if (!res.ok) throw new Error('Upload failed')
+    return res.json()
+}
