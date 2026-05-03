@@ -4,6 +4,7 @@
 
   ![Python](https://img.shields.io/badge/Python-3.10+-3776ab?style=flat-square&logo=python&logoColor=white)
   ![Flask](https://img.shields.io/badge/Flask-3.x-000000?style=flat-square&logo=flask&logoColor=white)
+  ![Supabase](https://img.shields.io/badge/Supabase-Database-3ecf8e?style=flat-square&logo=supabase&logoColor=white)
   ![Groq](https://img.shields.io/badge/Groq-LLaMA_3-f55036?style=flat-square)
   ![Google AI](https://img.shields.io/badge/Gemini-API-4285F4?style=flat-square&logo=google&logoColor=white)
   ![Stable Diffusion](https://img.shields.io/badge/Stable_Diffusion-XL-ff6b35?style=flat-square)
@@ -14,7 +15,7 @@
 
 # 🔮 CALYX AI — Backend API Server
 
-> The intelligence engine powering CALYX AI — a full-featured AI assistant platform supporting multi-turn chat, image generation, real-time voice, and web search.
+> The intelligence engine powering CALYX AI — a full-featured AI assistant platform supporting multi-turn chat, image generation, real-time voice, web search, and persistent cloud storage.
 
 ---
 
@@ -26,7 +27,9 @@
 | 🎨 **Image Generation** | Stable Diffusion XL via Hugging Face Inference API |
 | 🎙️ **Voice** | Real-time Speech-to-Text + Edge TTS text-to-speech |
 | 🔍 **Web Search** | Live internet search integrated into AI responses |
-| 🔐 **Auth** | JWT sessions + Google OAuth 2.0 |
+| 📂 **File Handling** | Multi-modal file uploads (images/docs) with persistent storage |
+| 💾 **Cloud Database** | **Supabase Integration** for persistent users and chat history |
+| 🔐 **Auth** | JWT sessions + **Google & GitHub OAuth 2.0** |
 | 🛡️ **Rate Limiting** | Per-user request throttling via Flask-Limiter |
 
 ---
@@ -36,6 +39,7 @@
 ### Prerequisites
 - Python 3.10+
 - pip
+- [Supabase Project](https://supabase.com)
 
 ### Setup
 
@@ -54,7 +58,7 @@ pip install -r Requirements.txt
 
 # 4. Configure environment
 cp .env.example .env
-# Edit .env with your API keys
+# Edit .env with your API keys, GitHub Secrets, and Supabase URL/Key
 
 # 5. Run the server
 python server.py
@@ -71,13 +75,13 @@ Copy `.env.example` to `.env` and fill in your keys:
 | Variable | Required | Source |
 |---|---|---|
 | `GroqAPIKey` | ✅ | [console.groq.com](https://console.groq.com) |
-| `GOOGLE_CLIENT_ID` | ✅ | [Google Cloud Console](https://console.cloud.google.com/apis/credentials) |
-| `GOOGLE_CLIENT_SECRET` | ✅ | [Google Cloud Console](https://console.cloud.google.com/apis/credentials) |
 | `HuggingFaceAPIKey` | ✅ | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) |
 | `GEMINI_API_KEY` | ✅ | [Google AI Studio](https://aistudio.google.com) |
-| `CohereAPIKey` | ⚡ Optional | [cohere.com](https://cohere.com) |
+| `SUPABASE_URL` | ✅ | [Supabase Project API URL](https://supabase.com) |
+| `SUPABASE_ANON_KEY` | ✅ | [Supabase Project Anon Key](https://supabase.com) |
+| `GOOGLE_CLIENT_ID` | ✅ | [Google Cloud Console](https://console.cloud.google.com) |
+| `GITHUB_CLIENT_ID` | ✅ | [GitHub Developer Settings](https://github.com/settings/developers) |
 | `JWT_SECRET` | ✅ | Any long random string (32+ chars) |
-| `FRONTEND_URL` | ✅ | Your frontend URL (e.g. `https://calyx.vercel.app`) |
 
 ---
 
@@ -89,15 +93,15 @@ Copy `.env.example` to `.env` and fill in your keys:
 | `POST` | `/api/auth/signup` | Create account |
 | `POST` | `/api/auth/signin` | Email/password login |
 | `GET` | `/api/auth/google` | Google OAuth redirect |
-| `GET` | `/api/auth/google/callback` | Google OAuth callback |
+| `GET` | `/api/auth/github` | GitHub OAuth redirect |
 
-### Chat
+### Chat & Storage
 | Method | Endpoint | Description |
 |---|---|---|
 | `POST` | `/api/chat` | Send message, get AI response |
-| `GET` | `/api/conversations` | List user conversations |
+| `POST` | `/api/upload` | Upload files to Supabase Storage |
+| `GET` | `/api/conversations` | List user conversations (via Supabase) |
 | `GET` | `/api/conversations/:id` | Get conversation history |
-| `DELETE` | `/api/conversations/:id` | Delete conversation |
 
 ### AI Features
 | Method | Endpoint | Description |
@@ -105,7 +109,6 @@ Copy `.env.example` to `.env` and fill in your keys:
 | `POST` | `/api/image/generate` | Generate image from prompt |
 | `POST` | `/api/voice/transcribe` | Speech to text |
 | `POST` | `/api/voice/tts` | Text to speech |
-| `GET` | `/api/health` | Server health check |
 
 ---
 
@@ -115,43 +118,32 @@ Copy `.env.example` to `.env` and fill in your keys:
 calyx-ai-backend/
 ├── server.py              # Main Flask app & all API routes
 ├── Requirements.txt       # Python dependencies
-├── render.yaml           # Render deployment config
-├── .env.example          # Environment template
+├── .env                  # Private configuration
 └── Backend 1/
     ├── Chatbot.py         # LLM integration (Groq/Gemini)
     ├── ImageGeneration.py # Stable Diffusion via HuggingFace
     ├── RealtimeSearchEngine.py # Live web search
-    ├── SpeechToText.py    # Voice transcription
-    ├── TextToSpeech.py    # Edge TTS
-    └── Model.py           # Decision/routing model
+    └── ...
 ```
 
 ---
 
-## ☁️ Deploy to Render (Free)
+## ☁️ Deployment
 
-1. Fork this repository
-2. Go to [render.com](https://render.com) → **New Web Service**
-3. Connect your fork
-4. Add all environment variables in Render dashboard
-5. Deploy — your API will be at `https://calyx-ai-backend.onrender.com`
+### Render Configuration
+1. Connect your GitHub repository to **Render**.
+2. Set the build command to `pip install -r Requirements.txt`.
+3. Set the start command to `gunicorn server:app`.
+4. Add all environment variables from `.env` to the Render Dashboard.
 
-> **Note:** Free tier spins down after 15min of inactivity. First request may take ~30s to wake up.
-
-### Google OAuth Setup for Production
-In [Google Cloud Console](https://console.cloud.google.com/apis/credentials), add to **Authorized Redirect URIs**:
-```
-https://calyx-ai-backend.onrender.com/api/auth/google/callback
-```
-
----
-
-## 🔗 Related
-
-- **Frontend:** [calyx-ai-frontend](https://github.com/YOUR_USERNAME/calyx-ai-frontend) — React + Vite
+### Supabase Setup
+1. Create a project at [supabase.com](https://supabase.com).
+2. Run the SQL table setup (see `SUPABASE_GUIDE.md`).
+3. Create a **Public** storage bucket named `uploads`.
 
 ---
 
 ## 📄 License
 
 MIT © 2025 Ayush Chavan
+
