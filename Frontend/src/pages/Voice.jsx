@@ -48,6 +48,9 @@ function VoiceContent() {
     const [isSecureContext, setIsSecureContext] = useState(true)
     const [ttsError, setTtsError] = useState('')
     const [volumeBars, setVolumeBars] = useState(new Array(16).fill(4))
+    const [micPermissionGranted, setMicPermissionGranted] = useState(false)
+    const [isMobile, setIsMobile] = useState(false)
+    const [isCheckingPermission, setIsCheckingPermission] = useState(true)
     
     const recognitionRef = useRef(null)
     const mediaRecorderRef = useRef(null)
@@ -74,8 +77,37 @@ function VoiceContent() {
     }, [transcript])
 
     useEffect(() => {
+        const mobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+        setIsMobile(mobile)
         setIsSecureContext(window.isSecureContext || location.protocol === 'https:' || location.hostname === 'localhost')
+        
+        // Check if permission was already granted
+        if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+            navigator.mediaDevices.enumerateDevices().then(devices => {
+                const hasLabel = devices.some(d => d.kind === 'audioinput' && d.label);
+                if (hasLabel) {
+                    setMicPermissionGranted(true);
+                }
+                setIsCheckingPermission(false);
+            }).catch(() => {
+                setIsCheckingPermission(false);
+            });
+        } else {
+            setIsCheckingPermission(false);
+        }
     }, [])
+
+    const handleRequestPermission = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            stream.getTracks().forEach(track => track.stop());
+            setMicPermissionGranted(true);
+            return true;
+        } catch (err) {
+            console.error("Microphone permission denied:", err);
+            return false;
+        }
+    };
 
     const unlockAudioContext = useCallback(async () => {
         if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
@@ -106,7 +138,9 @@ function VoiceContent() {
         recognition.continuous = !isIOS
         recognition.interimResults = true
         recognition.maxAlternatives = 1
-        recognition.lang = selectedLang || 'hi-IN'
+        // Robust language selection for mobile
+        const defaultLang = navigator.language || 'en-US'
+        recognition.lang = selectedLang || defaultLang
 
         recognition.onresult = (event) => {
             let finalChunk = ''
@@ -253,6 +287,15 @@ function VoiceContent() {
             setIsRecording(true)
             isRecordingRef.current = true
 
+            if (isMobile && !micPermissionGranted) {
+                const granted = await handleRequestPermission();
+                if (!granted) {
+                    setIsRecording(false);
+                    isRecordingRef.current = false;
+                    return;
+                }
+            }
+
             unlockAudioContext()
 
             if (recognitionRef.current) {
@@ -260,6 +303,14 @@ function VoiceContent() {
                     recognitionRef.current.start()
                 } catch (e) {
                     console.error("Recognition start error:", e)
+                    // On some mobile browsers, we might need to restart recognition 
+                    // after a small delay if it was already "running" but stuck
+                    if (e.name === 'InvalidStateError') {
+                        try { recognitionRef.current.stop(); } catch(i) {}
+                        setTimeout(() => {
+                            if (isRecordingRef.current) recognitionRef.current.start();
+                        }, 200);
+                    }
                 }
             }
 
@@ -285,7 +336,10 @@ function VoiceContent() {
                     mimeType = 'audio/webm;codecs=opus'
                 }
                 
-                const mediaRecorder = new MediaRecorder(stream, { mimeType })
+                const mediaRecorder = new MediaRecorder(stream, { 
+                    mimeType,
+                    audioBitsPerSecond: isMobile ? 64000 : 128000 
+                })
                 chunksRef.current = []
 
                 mediaRecorder.ondataavailable = (e) => {
@@ -439,6 +493,36 @@ function VoiceContent() {
                 <p className="text-foreground/60 max-w-md mx-auto">
                     Voice features require HTTPS. Please access this site via a secure connection.
                 </p>
+            </div>
+        )
+    }
+
+    if (isMobile && !micPermissionGranted && !isCheckingPermission) {
+        return (
+            <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center selection:bg-primary/30 font-geist">
+                <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="liquid-glass p-10 rounded-[2.5rem] border-white/[0.05] max-w-sm w-full"
+                >
+                    <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-8 relative">
+                        <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full animate-pulse" />
+                        <span className="material-icons text-4xl text-primary relative">mic</span>
+                    </div>
+                    <h2 className="text-2xl font-bold mb-4">Enable Microphone</h2>
+                    <p className="text-foreground/60 text-sm leading-relaxed mb-10">
+                        Calyx AI needs microphone access to process your voice and provide intelligent responses.
+                    </p>
+                    <button 
+                        onClick={handleRequestPermission}
+                        className="w-full py-4 bg-primary text-white rounded-2xl font-bold text-sm uppercase tracking-widest shadow-[0_0_30px_rgba(19,127,236,0.3)] hover:shadow-[0_0_50px_rgba(19,127,236,0.5)] transition-all active:scale-95"
+                    >
+                        Grant Permission
+                    </button>
+                    <p className="mt-6 text-[10px] text-foreground/30 font-bold uppercase tracking-widest">
+                        Standard browser security protocol
+                    </p>
+                </motion.div>
             </div>
         )
     }

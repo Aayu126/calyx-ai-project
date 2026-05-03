@@ -30,10 +30,10 @@ services:
       - key: BACKEND_URL
         value: https://calyx-ai-backend-wl72.onrender.com
       - key: GITHUB_CLIENT_ID
-        value: "Ov23liKDmOMm3PP5smzp"
+        value: ""
       - key: GITHUB_CLIENT_SECRET
-        value: "f935bda0b6a999bcc82453be72472c27d445a64c"
+        value: ""
       - key: SUPABASE_URL
-        value: https://mfloiincuqomulvuekso.supabase.co
+        value: ""
       - key: SUPABASE_ANON_KEY
-        value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1mbG9paW5jdXFvbXVsdnVla3NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4MjMyODksImV4cCI6MjA5MzM5OTI4OX0.4AOmuU9tMrvL_-cXs0XvsgnzIF8zEm-T3awA1mL5WYk"
+        value: ""
