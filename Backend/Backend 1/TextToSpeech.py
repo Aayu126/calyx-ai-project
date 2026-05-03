@@ -21,7 +21,7 @@ VOICE_MAP = {
     'fr': 'fr-FR-EloiseNeural',  # Eloise is a highly rated French voice
     'de': 'de-DE-KillianNeural', # Killian is a natural German male voice
     'hi': 'hi-IN-MadhurNeural',  # Madhur is often more natural for Hindi
-    'mr': 'mr-IN-ManoharNeural', # Manohar provides a steady Marathi voice
+    'mr': 'mr-IN-AarohiNeural',  # Aarohi is a clear and natural Marathi female voice
     'ja': 'ja-JP-KeitaNeural',   # Keita is a natural Japanese voice
 }
 
