@@ -14,23 +14,24 @@ try:
 except ImportError:
     detect = lambda text: 'en'
 
-# Voice mapping for supported languages
+# Voice mapping for supported languages - Using premium neural voices
 VOICE_MAP = {
-    'en': 'en-US-JennyNeural',
-    'es': 'es-ES-ElviraNeural',
-    'fr': 'fr-FR-DeniseNeural',
-    'de': 'de-DE-KatjaNeural',
-    'hi': 'hi-IN-SwaraNeural',
-    'mr': 'mr-IN-AarohiNeural',
-    'ja': 'ja-JP-NanamiNeural',
+    'en': 'en-US-EmmaNeural',    # Emma sounds very professional and natural
+    'es': 'es-ES-AlvaroNeural',  # Alvaro is a clear Spanish voice
+    'fr': 'fr-FR-EloiseNeural',  # Eloise is a highly rated French voice
+    'de': 'de-DE-KillianNeural', # Killian is a natural German male voice
+    'hi': 'hi-IN-MadhurNeural',  # Madhur is often more natural for Hindi
+    'mr': 'mr-IN-ManoharNeural', # Manohar provides a steady Marathi voice
+    'ja': 'ja-JP-KeitaNeural',   # Keita is a natural Japanese voice
 }
 
 def get_voice_for_text(text):
     try:
         lang = detect(text)
-        return VOICE_MAP.get(lang, 'en-US-JennyNeural')
+        # Default to EmmaNeural for English or unknown
+        return VOICE_MAP.get(lang, 'en-US-EmmaNeural')
     except:
-        return 'en-US-JennyNeural'
+        return 'en-US-EmmaNeural'
 
 # Get absolute path to project root (Elon - Copy directory)
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -41,7 +42,7 @@ _SPEECH_PATH = os.path.join(_DATA_DIR, "speech.mp3")
 os.makedirs(_DATA_DIR, exist_ok=True)
 
 # Use os.environ instead of .env file for production
-AssistantVoice = os.environ.get("AssistantVoice", "en-US-JennyNeural")
+AssistantVoice = os.environ.get("AssistantVoice", "en-US-EmmaNeural")
 
 
 
@@ -62,9 +63,7 @@ async def TextToAudioFile(text) -> None:
 
         communicate = edge_tts.Communicate(
             text=str(text),
-            voice=voice,
-            pitch='+5Hz',
-            rate='+13%'
+            voice=voice
         )
         print(f"Using voice: {voice}")
         await communicate.save(_SPEECH_PATH)
@@ -86,9 +85,7 @@ async def generate_audio_to_file(text, output_path=None):
         voice = get_voice_for_text(str(text))
         communicate = edge_tts.Communicate(
             text=str(text),
-            voice=voice,
-            pitch='+5Hz',
-            rate='+13%'
+            voice=voice
         )
         await communicate.save(output_path)
         return output_path
