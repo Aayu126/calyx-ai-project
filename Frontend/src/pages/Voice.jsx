@@ -136,7 +136,8 @@ function VoiceContent() {
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
         const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent)
         
-        recognition.continuous = !isIOS
+        // Disable continuous to allow auto-stop when speech ends
+        recognition.continuous = false 
         recognition.interimResults = true
         recognition.maxAlternatives = 1
         // Robust language selection for mobile
@@ -189,21 +190,9 @@ function VoiceContent() {
 
         recognition.onend = () => {
             setListening(false)
+            // Automatically stop all recording once speech is finished
             if (isRecordingRef.current) {
-                try {
-                    recognition.start()
-                    setListening(true)
-                } catch(err) {
-                    console.warn("Recognition restart failed:", err)
-                    setTimeout(() => {
-                        if (isRecordingRef.current) {
-                            try {
-                                recognition.start()
-                                setListening(true)
-                            } catch(e) {}
-                        }
-                    }, 100)
-                }
+                stopAllRecording()
             }
         }
 
