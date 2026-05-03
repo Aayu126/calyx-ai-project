@@ -5,6 +5,30 @@
 [![Vercel Deployment](https://img.shields.io/badge/Deploy-Vercel-black?style=for-the-badge&logo=vercel)](https://calyx.vercel.app)
 [![Render Backend](https://img.shields.io/badge/Deploy-Render-46e3b7?style=for-the-badge&logo=render&logoColor=white)](https://render.com)
 
+---
+
+### 🛠️ Tech Stack
+
+**Frontend:**
+![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB)
+![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=flat-square&logo=css3&logoColor=white)
+
+**Backend:**
+![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-000000?style=flat-square&logo=flask&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white)
+![Gunicorn](https://img.shields.io/badge/Gunicorn-499848?style=flat-square&logo=gunicorn&logoColor=white)
+
+**AI & Cloud:**
+![Groq](https://img.shields.io/badge/Groq-LLaMA--3-f55036?style=flat-square)
+![HuggingFace](https://img.shields.io/badge/HuggingFace-Transformers-FFD21E?style=flat-square&logo=huggingface&logoColor=black)
+![Google AI](https://img.shields.io/badge/Gemini-API-4285F4?style=flat-square&logo=google&logoColor=white)
+![OAuth2](https://img.shields.io/badge/OAuth2-Google_%26_GitHub-eb4034?style=flat-square)
+
+---
+
 **Calyx AI** is a premium, full-stack AI ecosystem designed for speed, beauty, and intelligence. It brings together state-of-the-art LLMs, Image Generation, Voice AI, and Live Web Search into a single, unified glassmorphic interface.
 
 ---
