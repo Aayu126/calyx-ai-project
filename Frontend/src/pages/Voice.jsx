@@ -37,6 +37,7 @@ const LANGUAGES = [
 
 function VoiceContent() {
     const [isRecording, setIsRecording] = useState(false)
+    const [isTranscribing, setIsTranscribing] = useState(false)
     const [transcript, setTranscript] = useState('')
     const [interimText, setInterimText] = useState('')
     const [listening, setListening] = useState(false)
@@ -347,8 +348,10 @@ function VoiceContent() {
                 }
                 
                 mediaRecorder.onstop = () => {
+                    setIsTranscribing(true)
                     const audioBlob = new Blob(chunksRef.current, { type: mimeType })
                     const lang = selectedLangRef.current
+                    
                     transcribeAudio(audioBlob, lang).then((data) => {
                         if (data && data.text && data.text.trim().length > 0) {
                             const clean = data.text.trim()
@@ -360,6 +363,9 @@ function VoiceContent() {
                         }
                     }).catch((err) => {
                         console.error("Backend transcription failed:", err)
+                        setTtsError("Transcription failed: " + err.message)
+                    }).finally(() => {
+                        setIsTranscribing(false)
                     })
                 }
 
@@ -659,7 +665,7 @@ function VoiceContent() {
                                     ) : (
                                         <div className="flex flex-col items-center justify-center h-full text-foreground/20 italic text-sm text-center py-4">
                                             <span className="material-icons text-2xl md:text-3xl mb-3 opacity-20">notes</span>
-                                            {isRecording ? 'Processing voice signals...' : 'Your transcription will emerge here'}
+                                            {isRecording ? 'Processing voice signals...' : isTranscribing ? 'Finalizing transcription...' : 'Your transcription will emerge here'}
                                         </div>
                                     )}
                                 </div>

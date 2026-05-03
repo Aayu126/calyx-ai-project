@@ -560,8 +560,12 @@ def voice_transcribe():
         from groq import Groq
         client = Groq(api_key=groq_key)
         
-        # Save temporary file
-        temp_path = os.path.join(DATA_DIR, f"temp_{uuid.uuid4()}.webm")
+        # Save temporary file with correct extension
+        ext = ".webm"
+        if audio_file.filename and "." in audio_file.filename:
+            ext = os.path.splitext(audio_file.filename)[1]
+        
+        temp_path = os.path.join(DATA_DIR, f"temp_{uuid.uuid4()}{ext}")
         audio_file.save(temp_path)
         
         try:

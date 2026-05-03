@@ -94,18 +94,42 @@ export async function generateImage(prompt, options = {}) {
 
 // ─── Voice / Speech ──────────────────────────────────
 export async function transcribeAudio(audioBlob, language = '') {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
     const formData = new FormData()
-    formData.append('audio', audioBlob)
+    let ext = 'webm';
+    if (audioBlob.type.includes('mp4')) ext = 'm4a';
+    else if (audioBlob.type.includes('3gpp')) ext = '3gp';
+    else if (audioBlob.type.includes('wav')) ext = 'wav';
+    
+    formData.append('audio', audioBlob, `audio.${ext}`)
     if (language) {
         formData.append('language', language)
     }
     const token = localStorage.getItem('calyx_token')
-    const res = await fetch(`${API_URL}/voice/transcribe`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData,
-    })
-    return res.json()
+    
+    try {
+        const res = await fetch(`${API_URL}/voice/transcribe`, {
+            method: 'POST',
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            body: formData,
+            signal: controller.signal
+        })
+        clearTimeout(timeoutId);
+        
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.error || `Server responded with ${res.status}`);
+        }
+        return res.json()
+    } catch (err) {
+        clearTimeout(timeoutId);
+        if (err.name === 'AbortError') {
+            throw new Error('Transcription timed out after 30 seconds. Please try a shorter recording.');
+        }
+        throw err;
+    }
 }
 
 export async function textToSpeech(text) {
