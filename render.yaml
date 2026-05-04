@@ -14,26 +14,26 @@ services:
       - key: FRONTEND_URL
         value: https://calyx-ai-project.vercel.app
       - key: GEMINI_API_KEY
-        value: ""
+        sync: false
       - key: HuggingFaceAPIKey
-        value: ""
+        sync: false
       - key: GroqAPIKey
-        value: ""
+        sync: false
       - key: CohereAPIKey
-        value: ""
+        sync: false
       - key: JWT_SECRET
-        value: "generate_a_random_string_here"
+        sync: false
       - key: GOOGLE_CLIENT_ID
-        value: ""
+        sync: false
       - key: GOOGLE_CLIENT_SECRET
-        value: ""
+        sync: false
       - key: BACKEND_URL
         value: https://calyx-ai-backend-wl72.onrender.com
       - key: GITHUB_CLIENT_ID
-        value: ""
+        sync: false
       - key: GITHUB_CLIENT_SECRET
-        value: ""
+        sync: false
       - key: SUPABASE_URL
-        value: ""
+        sync: false
       - key: SUPABASE_ANON_KEY
-        value: ""
+        sync: false
