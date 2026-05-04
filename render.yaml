@@ -28,7 +28,7 @@ services:
       - key: GOOGLE_CLIENT_SECRET
         sync: false
       - key: BACKEND_URL
-        value: https://calyx-ai-backend-wl72.onrender.com
+        value: https://calyx-ai-backend-nwvl.onrender.com
       - key: GITHUB_CLIENT_ID
         sync: false
       - key: GITHUB_CLIENT_SECRET
